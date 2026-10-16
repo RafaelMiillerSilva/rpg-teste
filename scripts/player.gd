@@ -1,6 +1,11 @@
 extends CharacterBody2D
 
 signal health_changed(current: int, max_hp: int)
+signal coins_changed(new_amount: int)
+signal potions_changed(new_amount: int)
+signal game_saved()
+
+const SAVE_FILE_PATH: String = "user://savegame.json"
 
 ## Velocidade máxima do personagem em pixels por segundo.
 @export var speed: float = 250.0
@@ -17,6 +22,12 @@ signal health_changed(current: int, max_hp: int)
 ## Dano do golpe do jogador.
 @export var attack_damage: int = 15
 
+## Quantidade de moedas coletadas pelo jogador.
+@export var coins: int = 0
+
+## Quantidade de poções de cura no inventário.
+@export var potions: int = 0
+
 ## Controla se o jogador pode se mover e atacar (congelado durante diálogos).
 var can_move: bool = true
 
@@ -32,15 +43,28 @@ var is_attacking: bool = false
 ## Tempo de invulnerabilidade breve para evitar dano por múltiplos frames.
 var is_invulnerable: bool = false
 
-@onready var color_rect: ColorRect = $ColorRect
+## Controle de animação de caminhada com squash & stretch
+var _walk_tween: Tween
+var _is_walk_animating: bool = false
+
+## Controle de tremor de tela (screen shake)
+var _shake_tween: Tween
+
+@onready var sprite: Sprite2D = $Sprite2D
+@onready var color_rect = $Sprite2D # Retrocompatibilidade
+@onready var camera: Camera2D = $Camera2D
 @onready var sword_hitbox: Area2D = $SwordHitbox
 @onready var sword_collision: CollisionShape2D = $SwordHitbox/CollisionShape2D
+@onready var sword_sprite: Sprite2D = $SwordHitbox/Sprite2D
 
 func _ready() -> void:
 	add_to_group("player")
 	_setup_default_inputs()
 
 	current_health = max_health
+
+	if sprite:
+		sprite.scale = BASE_SCALE
 
 	if sword_hitbox:
 		sword_hitbox.visible = false
@@ -52,12 +76,23 @@ func _ready() -> void:
 
 	# Notifica a interface inicial
 	health_changed.emit(current_health, max_health)
+	coins_changed.emit(coins)
+	potions_changed.emit(potions)
 
 func _physics_process(delta: float) -> void:
+	# Atalhos de save/load e poção via Input actions
+	if Input.is_action_just_pressed("save_game"):
+		save_game()
+	elif Input.is_action_just_pressed("load_game"):
+		load_game()
+	elif Input.is_action_just_pressed("use_potion"):
+		use_potion()
+
 	# Se a movimentação estiver desabilitada, zera a velocidade e não processa entrada
 	if not can_move:
 		velocity = Vector2.ZERO
 		move_and_slide()
+		_process_walk_animation(false)
 		return
 
 	# Captura o vetor de movimentação em 8 direções
@@ -66,54 +101,197 @@ func _physics_process(delta: float) -> void:
 	if direction != Vector2.ZERO:
 		last_direction = direction.normalized()
 		velocity = velocity.move_toward(direction * speed, acceleration * delta)
+		# Vira o sprite para a direção horizontal de movimento
+		if sprite and abs(direction.x) > 0.1:
+			sprite.flip_h = direction.x < 0.0
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 
 	move_and_slide()
+
+	# Efeito de balanço de escala (squash & stretch) enquanto caminha
+	var is_moving: bool = velocity.length() > 20.0
+	_process_walk_animation(is_moving)
 
 	# Acionamento do ataque por Espaço (ui_select / attack)
 	if Input.is_action_just_pressed("attack") or Input.is_action_just_pressed("ui_select"):
 		attack()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F6:
+			save_game()
+		elif event.keycode == KEY_F7:
+			load_game()
+		elif event.keycode == KEY_Q:
+			use_potion()
+
 	if not can_move:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		attack()
 
+const BASE_SCALE: Vector2 = Vector2(3.0, 3.0)
+
+## Gerencia o Tween de squash & stretch ao andar
+func _process_walk_animation(is_moving: bool) -> void:
+	if not sprite:
+		return
+
+	if is_moving and can_move:
+		if not _is_walk_animating:
+			_is_walk_animating = true
+			if _walk_tween and _walk_tween.is_valid():
+				_walk_tween.kill()
+			_walk_tween = create_tween().set_loops()
+			# Escala Y oscila suavemente entre 0.92 e 1.08 em relação a BASE_SCALE
+			_walk_tween.tween_property(sprite, "scale", Vector2(1.08, 0.92) * BASE_SCALE, 0.12).set_trans(Tween.TRANS_SINE)
+			_walk_tween.tween_property(sprite, "scale", Vector2(0.92, 1.08) * BASE_SCALE, 0.12).set_trans(Tween.TRANS_SINE)
+	else:
+		if _is_walk_animating:
+			_is_walk_animating = false
+			if _walk_tween and _walk_tween.is_valid():
+				_walk_tween.kill()
+			var reset_tween := create_tween()
+			reset_tween.tween_property(sprite, "scale", BASE_SCALE, 0.08)
+
+## Tremor de tela de 0.2 segundos com amortecimento gradual
+func screen_shake(duration: float = 0.2, strength: float = 7.0) -> void:
+	if not camera:
+		return
+	if _shake_tween and _shake_tween.is_valid():
+		_shake_tween.kill()
+
+	_shake_tween = create_tween()
+	var steps: int = 5
+	var step_time: float = duration / float(steps)
+	for i in range(steps):
+		var decay: float = 1.0 - (float(i) / float(steps))
+		var offset_rand := Vector2(
+			randf_range(-strength, strength) * decay,
+			randf_range(-strength, strength) * decay
+		)
+		_shake_tween.tween_property(camera, "offset", offset_rand, step_time)
+	_shake_tween.tween_property(camera, "offset", Vector2.ZERO, 0.04)
+
 ## Congela movimentação e ações do jogador (chamado por diálogos/cutscenes)
 func freeze() -> void:
 	can_move = false
 	velocity = Vector2.ZERO
+	_process_walk_animation(false)
 
 ## Descongela movimentação e ações do jogador
 func unfreeze() -> void:
 	can_move = true
+
+## Adiciona moedas ao inventário e emite atualização
+func add_coins(amount: int = 1) -> void:
+	coins += amount
+	coins_changed.emit(coins)
+
+## Adiciona poções ao inventário e emite atualização
+func add_potions(amount: int = 1) -> void:
+	potions += amount
+	potions_changed.emit(potions)
+
+## Usa uma poção de cura: restaura 35 de vida se tiver poção e não estiver com vida cheia
+func use_potion() -> void:
+	if potions > 0 and current_health < max_health:
+		potions -= 1
+		potions_changed.emit(potions)
+		SoundManager.play_heal()
+		heal(35)
 
 ## Recupera pontos de vida e emite atualização
 func heal(amount: int) -> void:
 	current_health = min(max_health, current_health + amount)
 	health_changed.emit(current_health, max_health)
 
-## Executa o ataque corpo a corpo
+## Salva a posição, vida, moedas e poções em user://savegame.json
+func save_game() -> void:
+	var save_data: Dictionary = {
+		"pos_x": global_position.x,
+		"pos_y": global_position.y,
+		"position_x": global_position.x,
+		"position_y": global_position.y,
+		"current_health": current_health,
+		"health": current_health,
+		"coins": coins,
+		"potions": potions
+	}
+	var file := FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
+	if file:
+		var json_string := JSON.stringify(save_data)
+		file.store_string(json_string)
+		file.close()
+		game_saved.emit()
+		print("Jogo salvo com sucesso em ", SAVE_FILE_PATH)
+	else:
+		push_error("Falha ao salvar jogo em " + SAVE_FILE_PATH)
+
+## Carrega o progresso salvo a partir de user://savegame.json
+func load_game() -> void:
+	if not FileAccess.file_exists(SAVE_FILE_PATH):
+		print("Arquivo de save não encontrado em ", SAVE_FILE_PATH)
+		return
+
+	var file := FileAccess.open(SAVE_FILE_PATH, FileAccess.READ)
+	if not file:
+		push_error("Falha ao abrir arquivo de save: " + str(FileAccess.get_open_error()))
+		return
+
+	var json_string := file.get_as_text()
+	file.close()
+
+	var json := JSON.new()
+	var parse_result := json.parse(json_string)
+	if parse_result != OK:
+		push_error("Erro ao analisar arquivo de save JSON.")
+		return
+
+	var data = json.data
+	if typeof(data) == TYPE_DICTIONARY:
+		var px = data.get("position_x", data.get("pos_x", null))
+		var py = data.get("position_y", data.get("pos_y", null))
+		if px != null and py != null:
+			global_position = Vector2(float(px), float(py))
+
+		var hp = data.get("current_health", data.get("health", null))
+		if hp != null:
+			current_health = clamp(int(hp), 0, max_health)
+			health_changed.emit(current_health, max_health)
+
+		if data.has("coins"):
+			coins = int(data["coins"])
+			coins_changed.emit(coins)
+
+		if data.has("potions"):
+			potions = int(data["potions"])
+			potions_changed.emit(potions)
+
+		print("Jogo carregado com sucesso!")
+
+## Executa o ataque corpo a corpo com rotação/swing da espada
 func attack() -> void:
 	if is_attacking or not can_move:
 		return
 
 	is_attacking = true
+	SoundManager.play_hit()
 
 	if sword_hitbox and sword_collision:
-		# Posiciona na frente do jogador de acordo com a última direção
-		sword_hitbox.position = last_direction * 28.0
-		sword_hitbox.rotation = last_direction.angle()
+		var base_angle: float = last_direction.angle()
+		var start_angle: float = base_angle - deg_to_rad(65.0)
+		var end_angle: float = base_angle + deg_to_rad(65.0)
+
+		sword_hitbox.position = last_direction * 54.0
+		sword_hitbox.rotation = start_angle
 		sword_hitbox.visible = true
 		sword_collision.disabled = false
 
-		if is_inside_tree():
-			var timer := get_tree().create_timer(0.15)
-			timer.timeout.connect(_on_attack_hit_window_finished)
-		else:
-			_on_attack_hit_window_finished()
+		var sword_tween := create_tween()
+		sword_tween.tween_property(sword_hitbox, "rotation", end_angle, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		sword_tween.tween_callback(_on_attack_hit_window_finished)
 	else:
 		is_attacking = false
 
@@ -136,7 +314,7 @@ func _on_sword_hitbox_body_entered(body: Node2D) -> void:
 			knockback_dir = last_direction
 		body.take_damage(attack_damage, knockback_dir)
 
-## Recebe dano, aplica empurrão e reinicia se morrer
+## Recebe dano, aplica empurrão, toca som, treme a câmera e abre Game Over se a vida zerar
 func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 	if is_invulnerable or current_health <= 0:
 		return
@@ -144,21 +322,25 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 	current_health = max(0, current_health - amount)
 	health_changed.emit(current_health, max_health)
 
+	# Efeitos visuais e sonoros de impacto
+	SoundManager.play_damage()
+	screen_shake(0.2, 7.0)
+
 	# Empurrão para trás
 	if knockback_dir != Vector2.ZERO:
 		velocity = knockback_dir * 350.0
 
-	# Feedback visual (pisca vermelho)
-	if color_rect:
-		color_rect.color = Color(1.0, 0.25, 0.25, 1.0)
+	# Feedback visual no sprite (pisca vermelho)
+	if sprite:
+		sprite.modulate = Color(1.0, 0.25, 0.25, 1.0)
 		var tween := create_tween()
 		if tween:
-			tween.tween_property(color_rect, "color", Color(0.2, 0.45, 0.95, 1.0), 0.15)
+			tween.tween_property(sprite, "modulate", Color.WHITE, 0.15)
 
-	# Se a vida zerar, reinicia a fase
+	# Se a vida zerar, transiciona para a tela de Game Over
 	if current_health <= 0:
 		if is_inside_tree():
-			get_tree().reload_current_scene()
+			get_tree().change_scene_to_file("res://scenes/game_over.tscn")
 		return
 
 	# Breve invulnerabilidade (0.35s) para o jogador não tomar vários hits imediatos
@@ -169,7 +351,7 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 	else:
 		is_invulnerable = false
 
-## Garante mapeamentos padrões para WASD, Setas, Ataque e Interação
+## Garante mapeamentos padrões para WASD, Setas, Ataque, Interação, Poção e Save/Load
 func _setup_default_inputs() -> void:
 	_register_action("move_left", [KEY_A, KEY_LEFT])
 	_register_action("move_right", [KEY_D, KEY_RIGHT])
@@ -177,6 +359,9 @@ func _setup_default_inputs() -> void:
 	_register_action("move_down", [KEY_S, KEY_DOWN])
 	_register_action("attack", [KEY_SPACE])
 	_register_action("interact", [KEY_E])
+	_register_action("use_potion", [KEY_Q])
+	_register_action("save_game", [KEY_F6])
+	_register_action("load_game", [KEY_F7])
 
 func _register_action(action_name: String, keycodes: Array[Key]) -> void:
 	if not InputMap.has_action(action_name):

@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/arrow.gd" id="1_arrow_script"]
+[ext_resource type="Texture2D" uid="uid://dy6kemktdi3t0" path="res://assets/tiny_swords/Units/Blue Units/Archer/Arrow.png" id="2_arrow_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arrow"]
+size = Vector2(28, 8)
+
+[node name="Arrow" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_arrow_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_arrow_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_arrow")

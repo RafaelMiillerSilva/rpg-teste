@@ -1,155 +1,780 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene format=3 uid="uid://dvg8e8rhqv105"]
 
-[ext_resource type="Script" path="res://scripts/world.gd" id="1_world_script"]
+[ext_resource type="Script" uid="uid://ukip7l020mh4" path="res://scripts/world.gd" id="1_world_script"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
-[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="3_enemy"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="4_npc"]
 [ext_resource type="PackedScene" path="res://scenes/dialogue_box.tscn" id="5_dialogue_box"]
 [ext_resource type="PackedScene" path="res://scenes/item_pickup.tscn" id="6_item_pickup"]
+[ext_resource type="PackedScene" path="res://scenes/tree.tscn" id="7_tree_scene"]
+[ext_resource type="Texture2D" uid="uid://bcbsecdmxyvx5" path="res://assets/tiny_swords/Terrain/Tileset/Tilemap_color1.png" id="8_tilemap_tex"]
+[ext_resource type="Texture2D" uid="uid://doi5q8yl2cyh7" path="res://assets/tiny_swords/Buildings/Blue Buildings/Castle.png" id="9_castle_tex"]
+[ext_resource type="Texture2D" uid="uid://dubf0010aae8y" path="res://assets/tiny_swords/Buildings/Blue Buildings/House1.png" id="10_house1_tex"]
+[ext_resource type="Texture2D" uid="uid://biukig837bdv5" path="res://assets/tiny_swords/Buildings/Blue Buildings/House2.png" id="11_house2_tex"]
+[ext_resource type="Texture2D" uid="uid://dahkg4h5mbft4" path="res://assets/tiny_swords/Buildings/Blue Buildings/Monastery.png" id="12_monastery_tex"]
+[ext_resource type="PackedScene" path="res://scenes/npc_archer.tscn" id="13_npc_archer"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_top_bottom"]
-size = Vector2(1600, 32)
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grass"]
+texture = ExtResource("8_tilemap_tex")
+texture_region_size = Vector2i(64, 64)
+1:1/0 = 0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_left_right"]
-size = Vector2(32, 1200)
+[sub_resource type="TileSet" id="TileSet_ground"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_grass")
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0.1, 0.1, 0.1, 0.8)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_forest_h"]
+size = Vector2(960, 230)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_forest_v"]
+size = Vector2(230, 710)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_blocker_h"]
+size = Vector2(200, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gate_blocker_v"]
+size = Vector2(40, 200)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_boundary_h"]
+size = Vector2(3000, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_boundary_v"]
+size = Vector2(40, 2500)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_castle"]
+size = Vector2(280, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_monastery"]
+size = Vector2(150, 90)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_house"]
+size = Vector2(100, 60)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_bg"]
+bg_color = Color(0.12, 0.08, 0.05, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.36, 0.22, 0.12, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_fill"]
+bg_color = Color(0.85, 0.16, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.35, 0.35, 0.5)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
-bg_color = Color(0.2, 0.8, 0.3, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[node name="World" type="Node2D"]
+[node name="World" type="Node2D" unique_id=422584925]
+y_sort_enabled = true
 script = ExtResource("1_world_script")
 
-[node name="Floor" type="ColorRect" parent="."]
-offset_right = 1600.0
-offset_bottom = 1200.0
-color = Color(0.12, 0.18, 0.14, 1)
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=313582895]
+z_index = -1
+texture_filter = 1
+tile_set = SubResource("TileSet_ground")
 
-[node name="Walls" type="Node2D" parent="."]
+[node name="Walls" type="Node2D" parent="." unique_id=1231661452]
 
-[node name="WallTop" type="StaticBody2D" parent="Walls"]
-position = Vector2(800, 16)
+[node name="WallNorthLeft" type="StaticBody2D" parent="Walls" unique_id=308423372]
+position = Vector2(430, 65)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ColorRect" type="ColorRect" parent="Walls/WallTop"]
-offset_left = -800.0
-offset_top = -16.0
-offset_right = 800.0
-offset_bottom = 16.0
-color = Color(0.24, 0.28, 0.32, 1)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallNorthLeft" unique_id=1567482967]
+shape = SubResource("RectangleShape2D_wall_forest_h")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallTop"]
-shape = SubResource("RectangleShape2D_top_bottom")
+[node name="WallNorthRight" type="StaticBody2D" parent="Walls" unique_id=1797841596]
+position = Vector2(1570, 65)
+collision_layer = 2
+collision_mask = 0
 
-[node name="WallBottom" type="StaticBody2D" parent="Walls"]
-position = Vector2(800, 1184)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallNorthRight" unique_id=808033149]
+shape = SubResource("RectangleShape2D_wall_forest_h")
 
-[node name="ColorRect" type="ColorRect" parent="Walls/WallBottom"]
-offset_left = -800.0
-offset_top = -16.0
-offset_right = 800.0
-offset_bottom = 16.0
-color = Color(0.24, 0.28, 0.32, 1)
+[node name="WallSouthLeft" type="StaticBody2D" parent="Walls" unique_id=484326843]
+position = Vector2(430, 1435)
+collision_layer = 2
+collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallBottom"]
-shape = SubResource("RectangleShape2D_top_bottom")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallSouthLeft" unique_id=1982381263]
+shape = SubResource("RectangleShape2D_wall_forest_h")
 
-[node name="WallLeft" type="StaticBody2D" parent="Walls"]
-position = Vector2(16, 600)
+[node name="WallSouthRight" type="StaticBody2D" parent="Walls" unique_id=985158720]
+position = Vector2(1570, 1435)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ColorRect" type="ColorRect" parent="Walls/WallLeft"]
-offset_left = -16.0
-offset_top = -600.0
-offset_right = 16.0
-offset_bottom = 600.0
-color = Color(0.24, 0.28, 0.32, 1)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallSouthRight" unique_id=1373720645]
+shape = SubResource("RectangleShape2D_wall_forest_h")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallLeft"]
-shape = SubResource("RectangleShape2D_left_right")
+[node name="WallWestTop" type="StaticBody2D" parent="Walls" unique_id=693685893]
+position = Vector2(65, 305)
+collision_layer = 2
+collision_mask = 0
 
-[node name="WallRight" type="StaticBody2D" parent="Walls"]
-position = Vector2(1584, 600)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallWestTop" unique_id=1977593640]
+shape = SubResource("RectangleShape2D_wall_forest_v")
 
-[node name="ColorRect" type="ColorRect" parent="Walls/WallRight"]
-offset_left = -16.0
-offset_top = -600.0
-offset_right = 16.0
-offset_bottom = 600.0
-color = Color(0.24, 0.28, 0.32, 1)
+[node name="WallWestBottom" type="StaticBody2D" parent="Walls" unique_id=2118684538]
+position = Vector2(65, 1195)
+collision_layer = 2
+collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallRight"]
-shape = SubResource("RectangleShape2D_left_right")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallWestBottom" unique_id=1279018129]
+shape = SubResource("RectangleShape2D_wall_forest_v")
 
-[node name="NPC" parent="." instance=ExtResource("4_npc")]
-position = Vector2(250, 250)
+[node name="WallEastTop" type="StaticBody2D" parent="Walls" unique_id=278197940]
+position = Vector2(1935, 305)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Enemies" type="Node2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallEastTop" unique_id=2062794588]
+shape = SubResource("RectangleShape2D_wall_forest_v")
 
-[node name="Pickups" type="Node2D" parent="."]
+[node name="WallEastBottom" type="StaticBody2D" parent="Walls" unique_id=119687159]
+position = Vector2(1935, 1195)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Coin1" parent="Pickups" instance=ExtResource("6_item_pickup")]
-position = Vector2(480, 360)
-item_type = "coin"
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallEastBottom" unique_id=1117949259]
+shape = SubResource("RectangleShape2D_wall_forest_v")
 
-[node name="Coin2" parent="Pickups" instance=ExtResource("6_item_pickup")]
-position = Vector2(960, 360)
-item_type = "coin"
+[node name="GateBlockerNorth" type="StaticBody2D" parent="Walls" unique_id=1103590279]
+position = Vector2(1000, -10)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Coin3" parent="Pickups" instance=ExtResource("6_item_pickup")]
-position = Vector2(720, 760)
-item_type = "coin"
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/GateBlockerNorth" unique_id=1355933311]
+shape = SubResource("RectangleShape2D_gate_blocker_h")
 
-[node name="Potion1" parent="Pickups" instance=ExtResource("6_item_pickup")]
-position = Vector2(400, 620)
+[node name="GateBlockerSouth" type="StaticBody2D" parent="Walls" unique_id=1816751007]
+position = Vector2(1000, 1510)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/GateBlockerSouth" unique_id=1349869991]
+shape = SubResource("RectangleShape2D_gate_blocker_h")
+
+[node name="GateBlockerWest" type="StaticBody2D" parent="Walls" unique_id=1048825818]
+position = Vector2(-10, 750)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/GateBlockerWest" unique_id=799798551]
+shape = SubResource("RectangleShape2D_gate_blocker_v")
+
+[node name="GateBlockerEast" type="StaticBody2D" parent="Walls" unique_id=2102903848]
+position = Vector2(2010, 750)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/GateBlockerEast" unique_id=64412437]
+shape = SubResource("RectangleShape2D_gate_blocker_v")
+
+[node name="BoundaryTop" type="StaticBody2D" parent="Walls" unique_id=59272050]
+position = Vector2(1000, -250)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/BoundaryTop" unique_id=1504982670]
+shape = SubResource("RectangleShape2D_boundary_h")
+
+[node name="BoundaryBottom" type="StaticBody2D" parent="Walls" unique_id=280581039]
+position = Vector2(1000, 1750)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/BoundaryBottom" unique_id=1514445392]
+shape = SubResource("RectangleShape2D_boundary_h")
+
+[node name="BoundaryLeft" type="StaticBody2D" parent="Walls" unique_id=432622559]
+position = Vector2(-250, 750)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/BoundaryLeft" unique_id=1800720238]
+shape = SubResource("RectangleShape2D_boundary_v")
+
+[node name="BoundaryRight" type="StaticBody2D" parent="Walls" unique_id=258798335]
+position = Vector2(2250, 750)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/BoundaryRight" unique_id=1126187160]
+shape = SubResource("RectangleShape2D_boundary_v")
+
+[node name="GateNorth" type="Marker2D" parent="." unique_id=815852606]
+position = Vector2(1000, 140)
+
+[node name="GateSouth" type="Marker2D" parent="." unique_id=1781995710]
+position = Vector2(1000, 1360)
+
+[node name="GateWest" type="Marker2D" parent="." unique_id=1890186165]
+position = Vector2(140, 750)
+
+[node name="GateEast" type="Marker2D" parent="." unique_id=1741729379]
+position = Vector2(1860, 750)
+
+[node name="Buildings" type="Node2D" parent="." unique_id=158345920]
+y_sort_enabled = true
+
+[node name="Castle" type="StaticBody2D" parent="Buildings" unique_id=153890605]
+texture_filter = 1
+position = Vector2(1000, 340)
+
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/Castle" unique_id=623491352]
+texture_filter = 1
+texture = ExtResource("9_castle_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/Castle" unique_id=1743750406]
+position = Vector2(0, 75)
+shape = SubResource("RectangleShape2D_castle")
+
+[node name="Monastery" type="StaticBody2D" parent="Buildings" unique_id=1029317190]
+texture_filter = 1
+position = Vector2(450, 500)
+
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/Monastery" unique_id=1863435561]
+texture_filter = 1
+texture = ExtResource("12_monastery_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/Monastery" unique_id=107753768]
+position = Vector2(0, 95)
+shape = SubResource("RectangleShape2D_monastery")
+
+[node name="House1" type="StaticBody2D" parent="Buildings" unique_id=292451511]
+texture_filter = 1
+position = Vector2(720, 540)
+
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/House1" unique_id=229118208]
+texture_filter = 1
+texture = ExtResource("10_house1_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House1" unique_id=801245153]
+position = Vector2(0, 50)
+shape = SubResource("RectangleShape2D_house")
+
+[node name="House2" type="StaticBody2D" parent="Buildings" unique_id=1061715134]
+texture_filter = 1
+position = Vector2(1280, 540)
+
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/House2" unique_id=1821441919]
+texture_filter = 1
+texture = ExtResource("11_house2_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House2" unique_id=1590460121]
+position = Vector2(0, 50)
+shape = SubResource("RectangleShape2D_house")
+
+[node name="House3" type="StaticBody2D" parent="Buildings" unique_id=1003231040]
+texture_filter = 1
+position = Vector2(1560, 580)
+
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/House3" unique_id=1854892829]
+texture_filter = 1
+texture = ExtResource("10_house1_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House3" unique_id=1704490316]
+position = Vector2(0, 50)
+shape = SubResource("RectangleShape2D_house")
+
+[node name="Forest" type="Node2D" parent="." unique_id=1691888116]
+y_sort_enabled = true
+
+[node name="Tree1" parent="Forest" unique_id=535904681 instance=ExtResource("7_tree_scene")]
+position = Vector2(60, 40)
+
+[node name="Tree2" parent="Forest" unique_id=555780598 instance=ExtResource("7_tree_scene")]
+position = Vector2(105, 90)
+
+[node name="Tree3" parent="Forest" unique_id=673519187 instance=ExtResource("7_tree_scene")]
+position = Vector2(150, 40)
+
+[node name="Tree4" parent="Forest" unique_id=200587348 instance=ExtResource("7_tree_scene")]
+position = Vector2(195, 90)
+
+[node name="Tree5" parent="Forest" unique_id=1866816173 instance=ExtResource("7_tree_scene")]
+position = Vector2(240, 40)
+
+[node name="Tree6" parent="Forest" unique_id=1414065403 instance=ExtResource("7_tree_scene")]
+position = Vector2(285, 90)
+
+[node name="Tree7" parent="Forest" unique_id=1221507720 instance=ExtResource("7_tree_scene")]
+position = Vector2(330, 40)
+
+[node name="Tree8" parent="Forest" unique_id=854610922 instance=ExtResource("7_tree_scene")]
+position = Vector2(375, 90)
+
+[node name="Tree9" parent="Forest" unique_id=502579660 instance=ExtResource("7_tree_scene")]
+position = Vector2(420, 40)
+
+[node name="Tree10" parent="Forest" unique_id=1325141521 instance=ExtResource("7_tree_scene")]
+position = Vector2(465, 90)
+
+[node name="Tree11" parent="Forest" unique_id=1655888279 instance=ExtResource("7_tree_scene")]
+position = Vector2(510, 40)
+
+[node name="Tree12" parent="Forest" unique_id=1355104591 instance=ExtResource("7_tree_scene")]
+position = Vector2(555, 90)
+
+[node name="Tree13" parent="Forest" unique_id=1973624766 instance=ExtResource("7_tree_scene")]
+position = Vector2(600, 40)
+
+[node name="Tree14" parent="Forest" unique_id=1684268175 instance=ExtResource("7_tree_scene")]
+position = Vector2(645, 90)
+
+[node name="Tree15" parent="Forest" unique_id=122960002 instance=ExtResource("7_tree_scene")]
+position = Vector2(690, 40)
+
+[node name="Tree16" parent="Forest" unique_id=1007468441 instance=ExtResource("7_tree_scene")]
+position = Vector2(735, 90)
+
+[node name="Tree17" parent="Forest" unique_id=2060417833 instance=ExtResource("7_tree_scene")]
+position = Vector2(780, 40)
+
+[node name="Tree18" parent="Forest" unique_id=1606030591 instance=ExtResource("7_tree_scene")]
+position = Vector2(825, 90)
+
+[node name="Tree19" parent="Forest" unique_id=1711895925 instance=ExtResource("7_tree_scene")]
+position = Vector2(870, 40)
+
+[node name="Tree20" parent="Forest" unique_id=693465470 instance=ExtResource("7_tree_scene")]
+position = Vector2(1140, 40)
+
+[node name="Tree21" parent="Forest" unique_id=1679756430 instance=ExtResource("7_tree_scene")]
+position = Vector2(1185, 90)
+
+[node name="Tree22" parent="Forest" unique_id=324130765 instance=ExtResource("7_tree_scene")]
+position = Vector2(1230, 40)
+
+[node name="Tree23" parent="Forest" unique_id=1527321916 instance=ExtResource("7_tree_scene")]
+position = Vector2(1275, 90)
+
+[node name="Tree24" parent="Forest" unique_id=1957405328 instance=ExtResource("7_tree_scene")]
+position = Vector2(1320, 40)
+
+[node name="Tree25" parent="Forest" unique_id=1686357041 instance=ExtResource("7_tree_scene")]
+position = Vector2(1365, 90)
+
+[node name="Tree26" parent="Forest" unique_id=85047928 instance=ExtResource("7_tree_scene")]
+position = Vector2(1410, 40)
+
+[node name="Tree27" parent="Forest" unique_id=1924777798 instance=ExtResource("7_tree_scene")]
+position = Vector2(1455, 90)
+
+[node name="Tree28" parent="Forest" unique_id=1080840645 instance=ExtResource("7_tree_scene")]
+position = Vector2(1500, 40)
+
+[node name="Tree29" parent="Forest" unique_id=1870615281 instance=ExtResource("7_tree_scene")]
+position = Vector2(1545, 90)
+
+[node name="Tree30" parent="Forest" unique_id=944106661 instance=ExtResource("7_tree_scene")]
+position = Vector2(1590, 40)
+
+[node name="Tree31" parent="Forest" unique_id=1992620781 instance=ExtResource("7_tree_scene")]
+position = Vector2(1635, 90)
+
+[node name="Tree32" parent="Forest" unique_id=963563911 instance=ExtResource("7_tree_scene")]
+position = Vector2(1680, 40)
+
+[node name="Tree33" parent="Forest" unique_id=416473010 instance=ExtResource("7_tree_scene")]
+position = Vector2(1725, 90)
+
+[node name="Tree34" parent="Forest" unique_id=1964997533 instance=ExtResource("7_tree_scene")]
+position = Vector2(1770, 40)
+
+[node name="Tree35" parent="Forest" unique_id=689303600 instance=ExtResource("7_tree_scene")]
+position = Vector2(1815, 90)
+
+[node name="Tree36" parent="Forest" unique_id=967453802 instance=ExtResource("7_tree_scene")]
+position = Vector2(1860, 40)
+
+[node name="Tree37" parent="Forest" unique_id=1007368888 instance=ExtResource("7_tree_scene")]
+position = Vector2(1905, 90)
+
+[node name="Tree38" parent="Forest" unique_id=643963157 instance=ExtResource("7_tree_scene")]
+position = Vector2(60, 1410)
+
+[node name="Tree39" parent="Forest" unique_id=341188093 instance=ExtResource("7_tree_scene")]
+position = Vector2(105, 1460)
+
+[node name="Tree40" parent="Forest" unique_id=1025397059 instance=ExtResource("7_tree_scene")]
+position = Vector2(150, 1410)
+
+[node name="Tree41" parent="Forest" unique_id=1437463299 instance=ExtResource("7_tree_scene")]
+position = Vector2(195, 1460)
+
+[node name="Tree42" parent="Forest" unique_id=32601149 instance=ExtResource("7_tree_scene")]
+position = Vector2(240, 1410)
+
+[node name="Tree43" parent="Forest" unique_id=886843100 instance=ExtResource("7_tree_scene")]
+position = Vector2(285, 1460)
+
+[node name="Tree44" parent="Forest" unique_id=1370973062 instance=ExtResource("7_tree_scene")]
+position = Vector2(330, 1410)
+
+[node name="Tree45" parent="Forest" unique_id=1180443556 instance=ExtResource("7_tree_scene")]
+position = Vector2(375, 1460)
+
+[node name="Tree46" parent="Forest" unique_id=1088514026 instance=ExtResource("7_tree_scene")]
+position = Vector2(420, 1410)
+
+[node name="Tree47" parent="Forest" unique_id=134871139 instance=ExtResource("7_tree_scene")]
+position = Vector2(465, 1460)
+
+[node name="Tree48" parent="Forest" unique_id=442815279 instance=ExtResource("7_tree_scene")]
+position = Vector2(510, 1410)
+
+[node name="Tree49" parent="Forest" unique_id=1572272084 instance=ExtResource("7_tree_scene")]
+position = Vector2(555, 1460)
+
+[node name="Tree50" parent="Forest" unique_id=953626578 instance=ExtResource("7_tree_scene")]
+position = Vector2(600, 1410)
+
+[node name="Tree51" parent="Forest" unique_id=1088979668 instance=ExtResource("7_tree_scene")]
+position = Vector2(645, 1460)
+
+[node name="Tree52" parent="Forest" unique_id=1884217303 instance=ExtResource("7_tree_scene")]
+position = Vector2(690, 1410)
+
+[node name="Tree53" parent="Forest" unique_id=1434191580 instance=ExtResource("7_tree_scene")]
+position = Vector2(735, 1460)
+
+[node name="Tree54" parent="Forest" unique_id=2062087541 instance=ExtResource("7_tree_scene")]
+position = Vector2(780, 1410)
+
+[node name="Tree55" parent="Forest" unique_id=328304368 instance=ExtResource("7_tree_scene")]
+position = Vector2(825, 1460)
+
+[node name="Tree56" parent="Forest" unique_id=455217744 instance=ExtResource("7_tree_scene")]
+position = Vector2(870, 1410)
+
+[node name="Tree57" parent="Forest" unique_id=823346964 instance=ExtResource("7_tree_scene")]
+position = Vector2(1140, 1410)
+
+[node name="Tree58" parent="Forest" unique_id=249012064 instance=ExtResource("7_tree_scene")]
+position = Vector2(1185, 1460)
+
+[node name="Tree59" parent="Forest" unique_id=4096564 instance=ExtResource("7_tree_scene")]
+position = Vector2(1230, 1410)
+
+[node name="Tree60" parent="Forest" unique_id=1265013067 instance=ExtResource("7_tree_scene")]
+position = Vector2(1275, 1460)
+
+[node name="Tree61" parent="Forest" unique_id=1740650174 instance=ExtResource("7_tree_scene")]
+position = Vector2(1320, 1410)
+
+[node name="Tree62" parent="Forest" unique_id=959483501 instance=ExtResource("7_tree_scene")]
+position = Vector2(1365, 1460)
+
+[node name="Tree63" parent="Forest" unique_id=1038408547 instance=ExtResource("7_tree_scene")]
+position = Vector2(1410, 1410)
+
+[node name="Tree64" parent="Forest" unique_id=667627799 instance=ExtResource("7_tree_scene")]
+position = Vector2(1455, 1460)
+
+[node name="Tree65" parent="Forest" unique_id=1856142072 instance=ExtResource("7_tree_scene")]
+position = Vector2(1500, 1410)
+
+[node name="Tree66" parent="Forest" unique_id=806998977 instance=ExtResource("7_tree_scene")]
+position = Vector2(1545, 1460)
+
+[node name="Tree67" parent="Forest" unique_id=13457441 instance=ExtResource("7_tree_scene")]
+position = Vector2(1590, 1410)
+
+[node name="Tree68" parent="Forest" unique_id=1048778152 instance=ExtResource("7_tree_scene")]
+position = Vector2(1635, 1460)
+
+[node name="Tree69" parent="Forest" unique_id=1853113216 instance=ExtResource("7_tree_scene")]
+position = Vector2(1680, 1410)
+
+[node name="Tree70" parent="Forest" unique_id=1964621545 instance=ExtResource("7_tree_scene")]
+position = Vector2(1725, 1460)
+
+[node name="Tree71" parent="Forest" unique_id=570387997 instance=ExtResource("7_tree_scene")]
+position = Vector2(1770, 1410)
+
+[node name="Tree72" parent="Forest" unique_id=918845415 instance=ExtResource("7_tree_scene")]
+position = Vector2(1815, 1460)
+
+[node name="Tree73" parent="Forest" unique_id=1505061537 instance=ExtResource("7_tree_scene")]
+position = Vector2(1860, 1410)
+
+[node name="Tree74" parent="Forest" unique_id=272292255 instance=ExtResource("7_tree_scene")]
+position = Vector2(1905, 1460)
+
+[node name="Tree75" parent="Forest" unique_id=669114305 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 180)
+
+[node name="Tree76" parent="Forest" unique_id=753631978 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 225)
+
+[node name="Tree77" parent="Forest" unique_id=598582170 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 270)
+
+[node name="Tree78" parent="Forest" unique_id=2088360788 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 315)
+
+[node name="Tree79" parent="Forest" unique_id=2063206133 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 360)
+
+[node name="Tree80" parent="Forest" unique_id=1773059650 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 405)
+
+[node name="Tree81" parent="Forest" unique_id=767858631 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 450)
+
+[node name="Tree82" parent="Forest" unique_id=438260639 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 495)
+
+[node name="Tree83" parent="Forest" unique_id=2056460679 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 540)
+
+[node name="Tree84" parent="Forest" unique_id=1918334371 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 585)
+
+[node name="Tree85" parent="Forest" unique_id=1882428148 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 630)
+
+[node name="Tree86" parent="Forest" unique_id=1656442665 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 900)
+
+[node name="Tree87" parent="Forest" unique_id=215276515 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 945)
+
+[node name="Tree88" parent="Forest" unique_id=1411836715 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 990)
+
+[node name="Tree89" parent="Forest" unique_id=1116958015 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 1035)
+
+[node name="Tree90" parent="Forest" unique_id=1267893309 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 1080)
+
+[node name="Tree91" parent="Forest" unique_id=1116631752 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 1125)
+
+[node name="Tree92" parent="Forest" unique_id=1268350298 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 1170)
+
+[node name="Tree93" parent="Forest" unique_id=1149209060 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 1215)
+
+[node name="Tree94" parent="Forest" unique_id=1055360640 instance=ExtResource("7_tree_scene")]
+position = Vector2(40, 1260)
+
+[node name="Tree95" parent="Forest" unique_id=1093458737 instance=ExtResource("7_tree_scene")]
+position = Vector2(90, 1305)
+
+[node name="Tree96" parent="Forest" unique_id=938212775 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 180)
+
+[node name="Tree97" parent="Forest" unique_id=645410590 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 225)
+
+[node name="Tree98" parent="Forest" unique_id=2132290402 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 270)
+
+[node name="Tree99" parent="Forest" unique_id=1899212906 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 315)
+
+[node name="Tree100" parent="Forest" unique_id=1013231335 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 360)
+
+[node name="Tree101" parent="Forest" unique_id=1368433199 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 405)
+
+[node name="Tree102" parent="Forest" unique_id=1962003812 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 450)
+
+[node name="Tree103" parent="Forest" unique_id=2055892893 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 495)
+
+[node name="Tree104" parent="Forest" unique_id=37139568 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 540)
+
+[node name="Tree105" parent="Forest" unique_id=658469577 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 585)
+
+[node name="Tree106" parent="Forest" unique_id=257864283 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 630)
+
+[node name="Tree107" parent="Forest" unique_id=131737700 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 900)
+
+[node name="Tree108" parent="Forest" unique_id=1826937103 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 945)
+
+[node name="Tree109" parent="Forest" unique_id=972259971 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 990)
+
+[node name="Tree110" parent="Forest" unique_id=1011938895 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 1035)
+
+[node name="Tree111" parent="Forest" unique_id=551581585 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 1080)
+
+[node name="Tree112" parent="Forest" unique_id=1730936708 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 1125)
+
+[node name="Tree113" parent="Forest" unique_id=1042921285 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 1170)
+
+[node name="Tree114" parent="Forest" unique_id=496225470 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 1215)
+
+[node name="Tree115" parent="Forest" unique_id=694104605 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 1260)
+
+[node name="Tree116" parent="Forest" unique_id=1747826623 instance=ExtResource("7_tree_scene")]
+position = Vector2(1960, 1305)
+
+[node name="Tree117" parent="Forest" unique_id=1168344638 instance=ExtResource("7_tree_scene")]
+position = Vector2(174, 172)
+
+[node name="Tree118" parent="Forest" unique_id=357372020 instance=ExtResource("7_tree_scene")]
+position = Vector2(237, 184)
+
+[node name="Tree119" parent="Forest" unique_id=210548716 instance=ExtResource("7_tree_scene")]
+position = Vector2(286, 180)
+
+[node name="Tree133" parent="Forest" unique_id=879441532 instance=ExtResource("7_tree_scene")]
+position = Vector2(1596, 171)
+
+[node name="Tree134" parent="Forest" unique_id=963193087 instance=ExtResource("7_tree_scene")]
+position = Vector2(1664, 180)
+
+[node name="Tree135" parent="Forest" unique_id=429762534 instance=ExtResource("7_tree_scene")]
+position = Vector2(1761, 185)
+
+[node name="Tree136" parent="Forest" unique_id=1147432779 instance=ExtResource("7_tree_scene")]
+position = Vector2(1826, 180)
+
+[node name="Tree144" parent="Forest" unique_id=122202811 instance=ExtResource("7_tree_scene")]
+position = Vector2(1821, 294)
+
+[node name="Tree152" parent="Forest" unique_id=359298119 instance=ExtResource("7_tree_scene")]
+position = Vector2(1823, 395)
+
+[node name="Tree156" parent="Forest" unique_id=558460635 instance=ExtResource("7_tree_scene")]
+position = Vector2(1829, 449)
+
+[node name="Tree271" parent="Forest" unique_id=1401801668 instance=ExtResource("7_tree_scene")]
+position = Vector2(280, 10)
+
+[node name="Tree272" parent="Forest" unique_id=1694016778 instance=ExtResource("7_tree_scene")]
+position = Vector2(555, 10)
+
+[node name="Tree273" parent="Forest" unique_id=941353119 instance=ExtResource("7_tree_scene")]
+position = Vector2(830, 10)
+
+[node name="Tree274" parent="Forest" unique_id=1759322914 instance=ExtResource("7_tree_scene")]
+position = Vector2(1360, 10)
+
+[node name="Tree275" parent="Forest" unique_id=1936458290 instance=ExtResource("7_tree_scene")]
+position = Vector2(1635, 10)
+
+[node name="Tree276" parent="Forest" unique_id=2014018246 instance=ExtResource("7_tree_scene")]
+position = Vector2(1910, 10)
+
+[node name="Tree277" parent="Forest" unique_id=1598111598 instance=ExtResource("7_tree_scene")]
+position = Vector2(60, 1485)
+
+[node name="Tree278" parent="Forest" unique_id=1330246413 instance=ExtResource("7_tree_scene")]
+position = Vector2(1140, 1485)
+
+[node name="NPC" parent="." unique_id=1483349224 instance=ExtResource("4_npc")]
+position = Vector2(450, 660)
+
+[node name="NPCArcher" parent="." unique_id=1137081418 instance=ExtResource("13_npc_archer")]
+position = Vector2(1320, 660)
+
+[node name="Enemies" type="Node2D" parent="." unique_id=288081440]
+y_sort_enabled = true
+
+[node name="Pickups" type="Node2D" parent="." unique_id=1235902597]
+
+[node name="Coin1" parent="Pickups" unique_id=1653183311 instance=ExtResource("6_item_pickup")]
+position = Vector2(850, 780)
+
+[node name="Coin2" parent="Pickups" unique_id=1183554577 instance=ExtResource("6_item_pickup")]
+position = Vector2(1150, 780)
+
+[node name="Coin3" parent="Pickups" unique_id=444961061 instance=ExtResource("6_item_pickup")]
+position = Vector2(1000, 980)
+
+[node name="Potion1" parent="Pickups" unique_id=1340651912 instance=ExtResource("6_item_pickup")]
+position = Vector2(560, 680)
 item_type = "potion"
 
-[node name="Potion2" parent="Pickups" instance=ExtResource("6_item_pickup")]
-position = Vector2(1180, 620)
+[node name="Potion2" parent="Pickups" unique_id=1274272818 instance=ExtResource("6_item_pickup")]
+position = Vector2(1440, 680)
 item_type = "potion"
 
-[node name="Player" parent="." instance=ExtResource("2_player")]
-position = Vector2(800, 600)
+[node name="Player" parent="." unique_id=84470410 instance=ExtResource("2_player")]
+position = Vector2(1000, 850)
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1638858512]
 
-[node name="HealthBar" type="ProgressBar" parent="CanvasLayer"]
+[node name="HealthBar" type="ProgressBar" parent="CanvasLayer" unique_id=2053128753]
+texture_filter = 1
 offset_left = 24.0
 offset_top = 24.0
-offset_right = 244.0
-offset_bottom = 50.0
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+offset_right = 264.0
+offset_bottom = 54.0
+theme_override_styles/background = SubResource("StyleBoxFlat_health_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_health_fill")
 value = 100.0
-show_percentage = true
+show_percentage = false
 
-[node name="CoinsLabel" type="Label" parent="CanvasLayer"]
+[node name="HealthText" type="Label" parent="CanvasLayer/HealthBar" unique_id=1595688761]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_outline_color = Color(0.1, 0.05, 0.02, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
+text = "100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CoinsLabel" type="Label" parent="CanvasLayer" unique_id=67038938]
 offset_left = 24.0
-offset_top = 58.0
+offset_top = 62.0
 offset_right = 244.0
-offset_bottom = 82.0
+offset_bottom = 86.0
 theme_override_colors/font_color = Color(1, 0.85, 0.1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 text = "Moedas: 0"
 
-[node name="PotionsLabel" type="Label" parent="CanvasLayer"]
+[node name="PotionsLabel" type="Label" parent="CanvasLayer" unique_id=1550257441]
 offset_left = 24.0
-offset_top = 84.0
+offset_top = 88.0
 offset_right = 244.0
-offset_bottom = 108.0
+offset_bottom = 112.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-text = "Poções [Q]: 0"
+text = "PoÃ§Ãµes [Q]: 0"
 
-[node name="TurnLabel" type="Label" parent="CanvasLayer"]
+[node name="TurnLabel" type="Label" parent="CanvasLayer" unique_id=158223002]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -164,7 +789,7 @@ theme_override_font_sizes/font_size = 20
 text = "Turno: 1"
 horizontal_alignment = 2
 
-[node name="EnemiesCountLabel" type="Label" parent="CanvasLayer"]
+[node name="EnemiesCountLabel" type="Label" parent="CanvasLayer" unique_id=1832356963]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -179,7 +804,7 @@ theme_override_font_sizes/font_size = 16
 text = "Inimigos: 0"
 horizontal_alignment = 2
 
-[node name="SaveNotificationLabel" type="Label" parent="CanvasLayer"]
+[node name="SaveNotificationLabel" type="Label" parent="CanvasLayer" unique_id=117094539]
 visible = false
 anchors_preset = 5
 anchor_left = 0.5
@@ -196,7 +821,7 @@ text = "Jogo Salvo!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TurnBannerLabel" type="Label" parent="CanvasLayer"]
+[node name="TurnBannerLabel" type="Label" parent="CanvasLayer" unique_id=41673252]
 visible = false
 anchors_preset = 8
 anchor_left = 0.5
@@ -218,4 +843,4 @@ text = "TURNO 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DialogueBox" parent="." instance=ExtResource("5_dialogue_box")]
+[node name="DialogueBox" parent="." unique_id=1456293913 instance=ExtResource("5_dialogue_box")]

@@ -5,10 +5,11 @@ extends Area2D
 		item_type = value
 		_update_appearance()
 
-@onready var color_rect: ColorRect = $ColorRect
+@onready var sprite: Sprite2D = $Sprite2D if has_node("Sprite2D") else null
+@onready var color_rect = $Sprite2D # Retrocompatibilidade
 
-const COLOR_COIN: Color = Color(1.0, 0.84, 0.0, 1.0)
-const COLOR_POTION: Color = Color(0.95, 0.25, 0.45, 1.0)
+const COLOR_COIN: Color = Color(1.0, 1.0, 1.0, 1.0)
+const COLOR_POTION: Color = Color(1.0, 0.35, 0.55, 1.0)
 
 var _bob_tween: Tween
 
@@ -19,24 +20,24 @@ func _ready() -> void:
 	_start_bobbing()
 
 func _update_appearance() -> void:
-	if not color_rect:
+	if not sprite:
 		return
 	if item_type == "potion":
-		color_rect.color = COLOR_POTION
+		sprite.modulate = COLOR_POTION
 	else:
-		color_rect.color = COLOR_COIN
+		sprite.modulate = COLOR_COIN
 
 ## Animação de flutuação suave infinita (bobbing effect) via Tween
 func _start_bobbing() -> void:
-	if not color_rect:
+	if not sprite:
 		return
 	if _bob_tween and _bob_tween.is_valid():
 		_bob_tween.kill()
 
-	color_rect.position.y = -8.0
+	sprite.position.y = 0.0
 	_bob_tween = create_tween().set_loops()
-	_bob_tween.tween_property(color_rect, "position:y", -12.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_bob_tween.tween_property(color_rect, "position:y", -4.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_bob_tween.tween_property(sprite, "position:y", -6.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_bob_tween.tween_property(sprite, "position:y", 6.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):

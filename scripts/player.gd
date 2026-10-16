@@ -43,19 +43,17 @@ var is_attacking: bool = false
 ## Tempo de invulnerabilidade breve para evitar dano por múltiplos frames.
 var is_invulnerable: bool = false
 
-## Controle de animação de caminhada com squash & stretch
-var _walk_tween: Tween
-var _is_walk_animating: bool = false
-
 ## Controle de tremor de tela (screen shake)
 var _shake_tween: Tween
 
-@onready var sprite: Sprite2D = $Sprite2D
-@onready var color_rect = $Sprite2D # Retrocompatibilidade
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var sprite = $AnimatedSprite2D # Retrocompatibilidade
+@onready var color_rect = $AnimatedSprite2D # Retrocompatibilidade
 @onready var camera: Camera2D = $Camera2D
 @onready var sword_hitbox: Area2D = $SwordHitbox
 @onready var sword_collision: CollisionShape2D = $SwordHitbox/CollisionShape2D
-@onready var sword_sprite: Sprite2D = $SwordHitbox/Sprite2D
+@onready var sword_sprite = $SwordHitbox.get_node_or_null("Sprite2D")
+@onready var heal_particles: CPUParticles2D = $HealParticles if has_node("HealParticles") else null
 
 func _ready() -> void:
 	add_to_group("player")
@@ -63,8 +61,10 @@ func _ready() -> void:
 
 	current_health = max_health
 
-	if sprite:
-		sprite.scale = BASE_SCALE
+	if animated_sprite:
+		animated_sprite.play("idle")
+		if not animated_sprite.animation_finished.is_connected(_on_animation_finished):
+			animated_sprite.animation_finished.connect(_on_animation_finished)
 
 	if sword_hitbox:
 		sword_hitbox.visible = false
@@ -73,6 +73,9 @@ func _ready() -> void:
 
 	if sword_collision:
 		sword_collision.disabled = true
+
+	if sword_sprite:
+		sword_sprite.visible = false
 
 	# Notifica a interface inicial
 	health_changed.emit(current_health, max_health)
@@ -92,7 +95,8 @@ func _physics_process(delta: float) -> void:
 	if not can_move:
 		velocity = Vector2.ZERO
 		move_and_slide()
-		_process_walk_animation(false)
+		if animated_sprite and not is_attacking:
+			animated_sprite.play("idle")
 		return
 
 	# Captura o vetor de movimentação em 8 direções
@@ -102,16 +106,20 @@ func _physics_process(delta: float) -> void:
 		last_direction = direction.normalized()
 		velocity = velocity.move_toward(direction * speed, acceleration * delta)
 		# Vira o sprite para a direção horizontal de movimento
-		if sprite and abs(direction.x) > 0.1:
-			sprite.flip_h = direction.x < 0.0
+		if animated_sprite and not is_attacking and abs(direction.x) > 0.1:
+			animated_sprite.flip_h = direction.x < 0.0
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 
 	move_and_slide()
 
-	# Efeito de balanço de escala (squash & stretch) enquanto caminha
+	# Atualiza a animação de acordo com a movimentação
 	var is_moving: bool = velocity.length() > 20.0
-	_process_walk_animation(is_moving)
+	if animated_sprite and not is_attacking:
+		if is_moving:
+			animated_sprite.play("walk")
+		else:
+			animated_sprite.play("idle")
 
 	# Acionamento do ataque por Espaço (ui_select / attack)
 	if Input.is_action_just_pressed("attack") or Input.is_action_just_pressed("ui_select"):
@@ -129,31 +137,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not can_move:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		var mouse_dir: Vector2 = (get_global_mouse_position() - global_position).normalized()
+		if mouse_dir != Vector2.ZERO:
+			last_direction = mouse_dir
 		attack()
 
-const BASE_SCALE: Vector2 = Vector2(3.0, 3.0)
-
-## Gerencia o Tween de squash & stretch ao andar
-func _process_walk_animation(is_moving: bool) -> void:
-	if not sprite:
-		return
-
-	if is_moving and can_move:
-		if not _is_walk_animating:
-			_is_walk_animating = true
-			if _walk_tween and _walk_tween.is_valid():
-				_walk_tween.kill()
-			_walk_tween = create_tween().set_loops()
-			# Escala Y oscila suavemente entre 0.92 e 1.08 em relação a BASE_SCALE
-			_walk_tween.tween_property(sprite, "scale", Vector2(1.08, 0.92) * BASE_SCALE, 0.12).set_trans(Tween.TRANS_SINE)
-			_walk_tween.tween_property(sprite, "scale", Vector2(0.92, 1.08) * BASE_SCALE, 0.12).set_trans(Tween.TRANS_SINE)
-	else:
-		if _is_walk_animating:
-			_is_walk_animating = false
-			if _walk_tween and _walk_tween.is_valid():
-				_walk_tween.kill()
-			var reset_tween := create_tween()
-			reset_tween.tween_property(sprite, "scale", BASE_SCALE, 0.08)
+## Retrocompatibilidade com lógica antiga de animação
+func _process_walk_animation(_is_moving: bool) -> void:
+	pass
 
 ## Tremor de tela de 0.2 segundos com amortecimento gradual
 func screen_shake(duration: float = 0.2, strength: float = 7.0) -> void:
@@ -178,7 +169,8 @@ func screen_shake(duration: float = 0.2, strength: float = 7.0) -> void:
 func freeze() -> void:
 	can_move = false
 	velocity = Vector2.ZERO
-	_process_walk_animation(false)
+	if animated_sprite:
+		animated_sprite.play("idle")
 
 ## Descongela movimentação e ações do jogador
 func unfreeze() -> void:
@@ -194,6 +186,12 @@ func add_potions(amount: int = 1) -> void:
 	potions += amount
 	potions_changed.emit(potions)
 
+## Dispara as partículas de cura (faíscas verdes/douradas)
+func trigger_heal_particles() -> void:
+	if heal_particles:
+		heal_particles.restart()
+		heal_particles.emitting = true
+
 ## Usa uma poção de cura: restaura 35 de vida se tiver poção e não estiver com vida cheia
 func use_potion() -> void:
 	if potions > 0 and current_health < max_health:
@@ -206,6 +204,7 @@ func use_potion() -> void:
 func heal(amount: int) -> void:
 	current_health = min(max_health, current_health + amount)
 	health_changed.emit(current_health, max_health)
+	trigger_heal_particles()
 
 ## Salva a posição, vida, moedas e poções em user://savegame.json
 func save_game() -> void:
@@ -271,7 +270,7 @@ func load_game() -> void:
 
 		print("Jogo carregado com sucesso!")
 
-## Executa o ataque corpo a corpo com rotação/swing da espada
+## Executa o ataque corpo a corpo com animação e rotação/swing da hitbox
 func attack() -> void:
 	if is_attacking or not can_move:
 		return
@@ -279,18 +278,24 @@ func attack() -> void:
 	is_attacking = true
 	SoundManager.play_hit()
 
+	# Vira o sprite para a direção do golpe
+	if animated_sprite:
+		if abs(last_direction.x) > 0.01:
+			animated_sprite.flip_h = last_direction.x < 0.0
+		animated_sprite.play("attack")
+
 	if sword_hitbox and sword_collision:
 		var base_angle: float = last_direction.angle()
 		var start_angle: float = base_angle - deg_to_rad(65.0)
 		var end_angle: float = base_angle + deg_to_rad(65.0)
 
-		sword_hitbox.position = last_direction * 54.0
+		sword_hitbox.position = last_direction * 40.0
 		sword_hitbox.rotation = start_angle
 		sword_hitbox.visible = true
 		sword_collision.disabled = false
 
 		var sword_tween := create_tween()
-		sword_tween.tween_property(sword_hitbox, "rotation", end_angle, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		sword_tween.tween_property(sword_hitbox, "rotation", end_angle, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		sword_tween.tween_callback(_on_attack_hit_window_finished)
 	else:
 		is_attacking = false
@@ -301,11 +306,13 @@ func _on_attack_hit_window_finished() -> void:
 	if is_instance_valid(sword_hitbox):
 		sword_hitbox.visible = false
 
-	if is_inside_tree():
-		var cooldown_timer := get_tree().create_timer(0.1)
-		cooldown_timer.timeout.connect(func(): is_attacking = false)
-	else:
+func _on_animation_finished() -> void:
+	if animated_sprite and animated_sprite.animation == "attack":
 		is_attacking = false
+		if can_move and velocity.length() > 20.0:
+			animated_sprite.play("walk")
+		else:
+			animated_sprite.play("idle")
 
 func _on_sword_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies") and body.has_method("take_damage"):
@@ -331,17 +338,18 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 		velocity = knockback_dir * 350.0
 
 	# Feedback visual no sprite (pisca vermelho)
-	if sprite:
-		sprite.modulate = Color(1.0, 0.25, 0.25, 1.0)
+	if animated_sprite:
+		animated_sprite.modulate = Color(1.0, 0.25, 0.25, 1.0)
 		var tween := create_tween()
 		if tween:
-			tween.tween_property(sprite, "modulate", Color.WHITE, 0.15)
+			tween.tween_property(animated_sprite, "modulate", Color.WHITE, 0.15)
 
 	# Se a vida zerar, transiciona para a tela de Game Over
 	if current_health <= 0:
 		if is_inside_tree():
-			get_tree().change_scene_to_file("res://scenes/game_over.tscn")
+			get_tree().call_deferred("change_scene_to_file", "res://scenes/game_over.tscn")
 		return
+
 
 	# Breve invulnerabilidade (0.35s) para o jogador não tomar vários hits imediatos
 	is_invulnerable = true

@@ -3,6 +3,7 @@ extends Node2D
 static var auto_load_save_on_start: bool = false
 
 const ENEMY_SCENE: PackedScene = preload("res://scenes/enemy.tscn")
+const ENEMY_ARCHER_SCENE: PackedScene = preload("res://scenes/enemy_archer.tscn")
 const BASE_ENEMIES_TURN_1: int = 3
 const TURN_MULTIPLIER: float = 1.4
 
@@ -11,20 +12,29 @@ var current_turn: int = 0
 var is_turn_active: bool = false
 var enemies_alive: int = 0
 
+
 @onready var player: CharacterBody2D = $Player
 @onready var enemies_container: Node2D = $Enemies
+@onready var tilemap_layer: TileMapLayer = $TileMapLayer if has_node("TileMapLayer") else null
 @onready var health_bar: ProgressBar = $CanvasLayer/HealthBar
+@onready var health_text: Label = $CanvasLayer/HealthBar.get_node_or_null("HealthText")
 @onready var coins_label: Label = $CanvasLayer/CoinsLabel
 @onready var potions_label: Label = $CanvasLayer/PotionsLabel
 @onready var save_label: Label = $CanvasLayer/SaveNotificationLabel
 @onready var turn_label: Label = $CanvasLayer/TurnLabel
 @onready var enemies_count_label: Label = $CanvasLayer/EnemiesCountLabel
 @onready var turn_banner_label: Label = $CanvasLayer/TurnBannerLabel
+@onready var gate_north: Marker2D = $GateNorth if has_node("GateNorth") else null
+@onready var gate_south: Marker2D = $GateSouth if has_node("GateSouth") else null
+@onready var gate_west: Marker2D = $GateWest if has_node("GateWest") else null
+@onready var gate_east: Marker2D = $GateEast if has_node("GateEast") else null
 
 var _save_tween: Tween
 var _banner_tween: Tween
 
 func _ready() -> void:
+	_setup_tilemap_floor()
+
 	if save_label:
 		save_label.visible = false
 	if turn_banner_label:
@@ -35,6 +45,7 @@ func _ready() -> void:
 			player.health_changed.connect(_on_player_health_changed)
 			health_bar.max_value = player.max_health
 			health_bar.value = player.current_health
+			_update_health_display(player.current_health, player.max_health)
 
 		if coins_label:
 			player.coins_changed.connect(_on_player_coins_changed)
@@ -73,21 +84,51 @@ func _load_initial_save() -> void:
 func get_enemies_for_turn(turn: int) -> int:
 	return maxi(1, int(round(float(BASE_ENEMIES_TURN_1) * pow(TURN_MULTIPLIER, turn - 1))))
 
-## Retorna uma coordenada aleatória próxima a uma das 4 bordas do mapa (1600x1200)
-func _get_random_border_position() -> Vector2:
-	var side: int = randi() % 4
-	match side:
-		0: # Borda Superior
-			return Vector2(randf_range(80.0, 1520.0), randf_range(60.0, 110.0))
-		1: # Borda Inferior
-			return Vector2(randf_range(80.0, 1520.0), randf_range(1090.0, 1130.0))
-		2: # Borda Esquerda
-			return Vector2(randf_range(60.0, 110.0), randf_range(80.0, 1120.0))
-		3: # Borda Direita
-			return Vector2(randf_range(1490.0, 1540.0), randf_range(80.0, 1120.0))
-	return Vector2(800.0, 100.0)
+func _setup_tilemap_floor() -> void:
+	if not tilemap_layer:
+		return
+	for x in range(-5, 37):
+		for y in range(-5, 29):
+			tilemap_layer.set_cell(Vector2i(x, y), 0, Vector2i(1, 1))
 
-## Inicia o próximo turno, gerando 1.4x mais inimigos nas bordas
+## Retorna a posição do Marker2D do portão indicado
+func _get_gate_position(side: int) -> Vector2:
+	match side:
+		0:
+			return gate_north.global_position if gate_north else Vector2(1000.0, 140.0)
+		1:
+			return gate_south.global_position if gate_south else Vector2(1000.0, 1360.0)
+		2:
+			return gate_west.global_position if gate_west else Vector2(140.0, 750.0)
+		3:
+			return gate_east.global_position if gate_east else Vector2(1860.0, 750.0)
+		_:
+			return Vector2(1000.0, 140.0)
+
+## Retorna o ponto inicial fora do mapa alinhado exatamente ao centro do portão
+func _get_spawn_position_for_gate(side: int) -> Vector2:
+	var gate_pos := _get_gate_position(side)
+	match side:
+		0: # Norte: acima do portão no mesmo eixo X exato
+			return Vector2(gate_pos.x, -60.0)
+		1: # Sul: abaixo do portão no mesmo eixo X exato
+			return Vector2(gate_pos.x, 1560.0)
+		2: # Oeste: à esquerda do portão no mesmo eixo Y exato
+			return Vector2(-60.0, gate_pos.y)
+		3: # Leste: à direita do portão no mesmo eixo Y exato
+			return Vector2(2060.0, gate_pos.y)
+		_:
+			return Vector2(gate_pos.x, -60.0)
+
+## Retrocompatibilidade para chamadas genéricas
+func _get_spawn_and_gate() -> Dictionary:
+	var side: int = randi() % 4
+	return { "spawn_pos": _get_spawn_position_for_gate(side), "gate_pos": _get_gate_position(side) }
+
+func _get_random_border_position() -> Vector2:
+	return _get_spawn_and_gate()["spawn_pos"]
+
+## Inicia o próximo turno com os inimigos marchando em filas retas pelos portões
 func start_next_turn() -> void:
 	current_turn += 1
 	is_turn_active = true
@@ -98,20 +139,60 @@ func start_next_turn() -> void:
 	_show_banner("TURNO %d\n%d Inimigos Invasores!" % [current_turn, total_enemies], Color(1.0, 0.85, 0.2, 1.0))
 	SoundManager.play_hit()
 
-	# Spawna os inimigos nas bordas do mapa
+	# Determina os portões ativos para a invasão
+	var num_active_gates: int = clampi(1 + int((current_turn - 1) / 2), 1, 4)
+	var all_gates: Array[int] = [0, 1, 2, 3] # 0: Norte, 1: Sul, 2: Oeste, 3: Leste
+	all_gates.shuffle()
+	var active_gates: Array[int] = all_gates.slice(0, num_active_gates)
+
+	# Distribui e despacha os inimigos em filas retas ritmadas
 	for i in range(total_enemies):
-		_spawn_enemy()
+		var gate_id: int = active_gates[i % active_gates.size()]
+		var queue_index: int = int(i / active_gates.size())
+		var spawn_delay: float = float(queue_index) * 0.7
+
+		if spawn_delay > 0.0:
+			var timer := get_tree().create_timer(spawn_delay)
+			timer.timeout.connect(func():
+				if is_inside_tree() and is_turn_active:
+					_spawn_enemy_in_line(gate_id)
+			)
+		else:
+			_spawn_enemy_in_line(gate_id)
 
 func _spawn_enemy() -> void:
-	if not ENEMY_SCENE or not enemies_container:
+	_spawn_enemy_in_line(randi() % 4)
+
+## Instancia um inimigo (guerreiro ou arqueiro) alinhado na fila do portão especificado
+func _spawn_enemy_in_line(gate_id: int) -> void:
+	if not enemies_container or not is_turn_active:
 		return
 
-	var enemy := ENEMY_SCENE.instantiate() as CharacterBody2D
-	enemy.global_position = _get_random_border_position()
+	# Sorteia entre guerreiro vermelho (espada) e arqueiro vermelho (arco)
+	var enemy_scene: PackedScene = ENEMY_SCENE
+	if ENEMY_ARCHER_SCENE and randf() < 0.4:
+		enemy_scene = ENEMY_ARCHER_SCENE
+
+	if not enemy_scene:
+		return
+
+	var enemy := enemy_scene.instantiate() as CharacterBody2D
+	if "turn" in enemy:
+		enemy.turn = current_turn
+
+	var gate_pos := _get_gate_position(gate_id)
+	var spawn_pos := _get_spawn_position_for_gate(gate_id)
+
+	enemy.global_position = spawn_pos
+	if "gate_position" in enemy:
+		enemy.gate_position = gate_pos
+
 	enemies_container.add_child(enemy)
 
 	# Monitora a eliminação do inimigo quando sair da árvore
 	enemy.tree_exited.connect(_on_enemy_defeated)
+
+
 
 func _on_enemy_defeated() -> void:
 	if not is_turn_active:
@@ -167,6 +248,11 @@ func _on_player_health_changed(current: int, max_hp: int) -> void:
 	if health_bar:
 		health_bar.max_value = max_hp
 		health_bar.value = current
+	_update_health_display(current, max_hp)
+
+func _update_health_display(current: int, max_hp: int) -> void:
+	if health_text:
+		health_text.text = "%d / %d" % [current, max_hp]
 
 func _on_player_coins_changed(new_amount: int) -> void:
 	if coins_label:

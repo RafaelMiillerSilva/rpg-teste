@@ -4,7 +4,7 @@ extends CharacterBody2D
 @export var npc_name: String = "Mestre Arqueiro"
 
 ## Custo para contratar o arqueiro como aliado.
-@export var hiring_cost: int = 80
+@export var hiring_cost: int = 90
 
 ## Velocidade de caminhada ao seguir o jogador.
 @export var follow_speed: float = 205.0
@@ -129,7 +129,7 @@ func trigger_dialogue() -> void:
 
 	if not is_hired:
 		var lines: Array[String] = [
-			"Olá! Sou um mestre arqueiro. Deseja me contratar por 80 moedas de ouro para cobrir suas costas com tiros rápidos? [E para Contratar / Afaste-se para Recusar]"
+			"Olá, Majestade! Sou um mestre arqueiro. Deseja me contratar por 90 moedas de ouro para cobrir suas costas com tiros rápidos? [E para Contratar / Afaste-se para Recusar]"
 		]
 		dialogue_box.start_dialogue(lines, npc_name)
 
@@ -137,7 +137,7 @@ func trigger_dialogue() -> void:
 			dialogue_box.dialogue_finished.connect(_on_hiring_dialogue_finished, CONNECT_ONE_SHOT)
 	else:
 		var lines: Array[String] = [
-			"Minhas flechas cobrirão seu avanço! Nenhum monstro escapará da minha mira."
+			"Minhas flechas cobrirão seu avanço, Majestade! Nenhum monstro escapará da minha mira."
 		]
 		dialogue_box.start_dialogue(lines, npc_name)
 
@@ -175,7 +175,7 @@ func _on_hiring_dialogue_finished() -> void:
 	else:
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var fail_lines: Array[String] = [
-				"Você não possui as 80 moedas de ouro necessárias. Derrote mais monstros para juntar o ouro!"
+				"Você não possui as 90 moedas de ouro necessárias. Derrote mais monstros para juntar o ouro!"
 			]
 			dialogue_box.start_dialogue(fail_lines, npc_name)
 

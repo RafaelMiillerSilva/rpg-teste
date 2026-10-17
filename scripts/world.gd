@@ -6,6 +6,7 @@ const ENEMY_SCENE: PackedScene = preload("res://scenes/enemy.tscn")
 const ENEMY_ARCHER_SCENE: PackedScene = preload("res://scenes/enemy_archer.tscn")
 const BASE_ENEMIES_TURN_1: int = 3
 const TURN_MULTIPLIER: float = 1.4
+const ENEMY_SPAWN_DISTANCE: float = 650.0
 
 ## Controle do sistema de turnos (ondas de inimigos)
 var current_turn: int = 0
@@ -24,6 +25,8 @@ var enemies_alive: int = 0
 @onready var turn_label: Label = $CanvasLayer/TurnLabel
 @onready var enemies_count_label: Label = $CanvasLayer/EnemiesCountLabel
 @onready var turn_banner_label: Label = $CanvasLayer/TurnBannerLabel
+@onready var pause_button: Button = $CanvasLayer.get_node_or_null("PauseButton")
+@onready var pause_menu: CanvasLayer = $PauseMenu if has_node("PauseMenu") else null
 @onready var gate_north: Marker2D = $GateNorth if has_node("GateNorth") else null
 @onready var gate_south: Marker2D = $GateSouth if has_node("GateSouth") else null
 @onready var gate_west: Marker2D = $GateWest if has_node("GateWest") else null
@@ -34,6 +37,12 @@ var _banner_tween: Tween
 
 func _ready() -> void:
 	_setup_tilemap_floor()
+
+	if pause_button and pause_menu:
+		pause_button.pressed.connect(func():
+			if pause_menu.has_method("toggle_pause"):
+				pause_menu.toggle_pause()
+		)
 
 	if save_label:
 		save_label.visible = false
@@ -87,48 +96,59 @@ func get_enemies_for_turn(turn: int) -> int:
 func _setup_tilemap_floor() -> void:
 	if not tilemap_layer:
 		return
-	for x in range(-5, 37):
-		for y in range(-5, 29):
+	for x in range(-6, 132):
+		for y in range(-6, 100):
 			tilemap_layer.set_cell(Vector2i(x, y), 0, Vector2i(1, 1))
 
 ## Retorna a posição do Marker2D do portão indicado
 func _get_gate_position(side: int) -> Vector2:
 	match side:
 		0:
-			return gate_north.global_position if gate_north else Vector2(1000.0, 140.0)
+			return gate_north.global_position if gate_north else Vector2(4000.0, 250.0)
 		1:
-			return gate_south.global_position if gate_south else Vector2(1000.0, 1360.0)
+			return gate_south.global_position if gate_south else Vector2(4000.0, 5750.0)
 		2:
-			return gate_west.global_position if gate_west else Vector2(140.0, 750.0)
+			return gate_west.global_position if gate_west else Vector2(250.0, 3000.0)
 		3:
-			return gate_east.global_position if gate_east else Vector2(1860.0, 750.0)
+			return gate_east.global_position if gate_east else Vector2(7750.0, 3000.0)
 		_:
-			return Vector2(1000.0, 140.0)
+			return Vector2(4000.0, 250.0)
 
 ## Retorna o ponto inicial fora do mapa alinhado exatamente ao centro do portão
 func _get_spawn_position_for_gate(side: int) -> Vector2:
 	var gate_pos := _get_gate_position(side)
 	match side:
 		0: # Norte: acima do portão no mesmo eixo X exato
-			return Vector2(gate_pos.x, -60.0)
+			return Vector2(gate_pos.x, -100.0)
 		1: # Sul: abaixo do portão no mesmo eixo X exato
-			return Vector2(gate_pos.x, 1560.0)
+			return Vector2(gate_pos.x, 6100.0)
 		2: # Oeste: à esquerda do portão no mesmo eixo Y exato
-			return Vector2(-60.0, gate_pos.y)
+			return Vector2(-100.0, gate_pos.y)
 		3: # Leste: à direita do portão no mesmo eixo Y exato
-			return Vector2(2060.0, gate_pos.y)
+			return Vector2(8100.0, gate_pos.y)
 		_:
-			return Vector2(gate_pos.x, -60.0)
+			return Vector2(gate_pos.x, -100.0)
+
+## Retorna uma posição de spawn a uma distância fixa do jogador em ângulo distribuído
+func _get_enemy_spawn_position() -> Vector2:
+	var center := player.global_position if is_instance_valid(player) else Vector2(4000.0, 2900.0)
+	var angle := randf() * TAU
+	var offset := Vector2(cos(angle), sin(angle)) * ENEMY_SPAWN_DISTANCE
+	var pos := center + offset
+	# Garante que não spawne dentro das barreiras de floresta
+	pos.x = clampf(pos.x, 350.0, 7650.0)
+	pos.y = clampf(pos.y, 350.0, 5650.0)
+	return pos
 
 ## Retrocompatibilidade para chamadas genéricas
 func _get_spawn_and_gate() -> Dictionary:
-	var side: int = randi() % 4
-	return { "spawn_pos": _get_spawn_position_for_gate(side), "gate_pos": _get_gate_position(side) }
+	var p := _get_enemy_spawn_position()
+	return { "spawn_pos": p, "gate_pos": p }
 
 func _get_random_border_position() -> Vector2:
-	return _get_spawn_and_gate()["spawn_pos"]
+	return _get_enemy_spawn_position()
 
-## Inicia o próximo turno com os inimigos marchando em filas retas pelos portões
+## Inicia o próximo turno com os inimigos spawnando a uma distância fixa do jogador
 func start_next_turn() -> void:
 	current_turn += 1
 	is_turn_active = true
@@ -139,32 +159,20 @@ func start_next_turn() -> void:
 	_show_banner("TURNO %d\n%d Inimigos Invasores!" % [current_turn, total_enemies], Color(1.0, 0.85, 0.2, 1.0))
 	SoundManager.play_hit()
 
-	# Determina os portões ativos para a invasão
-	var num_active_gates: int = clampi(1 + int((current_turn - 1) / 2), 1, 4)
-	var all_gates: Array[int] = [0, 1, 2, 3] # 0: Norte, 1: Sul, 2: Oeste, 3: Leste
-	all_gates.shuffle()
-	var active_gates: Array[int] = all_gates.slice(0, num_active_gates)
-
-	# Distribui e despacha os inimigos em filas retas ritmadas
+	# Despacha os inimigos a uma distância fixa do jogador com intervalo suave
 	for i in range(total_enemies):
-		var gate_id: int = active_gates[i % active_gates.size()]
-		var queue_index: int = int(i / active_gates.size())
-		var spawn_delay: float = float(queue_index) * 0.7
-
+		var spawn_delay: float = float(i) * 0.6
 		if spawn_delay > 0.0:
 			var timer := get_tree().create_timer(spawn_delay)
 			timer.timeout.connect(func():
 				if is_inside_tree() and is_turn_active:
-					_spawn_enemy_in_line(gate_id)
+					_spawn_enemy()
 			)
 		else:
-			_spawn_enemy_in_line(gate_id)
+			_spawn_enemy()
 
+## Instancia um inimigo (guerreiro ou arqueiro) a uma distância fixa do jogador
 func _spawn_enemy() -> void:
-	_spawn_enemy_in_line(randi() % 4)
-
-## Instancia um inimigo (guerreiro ou arqueiro) alinhado na fila do portão especificado
-func _spawn_enemy_in_line(gate_id: int) -> void:
 	if not enemies_container or not is_turn_active:
 		return
 
@@ -180,17 +188,21 @@ func _spawn_enemy_in_line(gate_id: int) -> void:
 	if "turn" in enemy:
 		enemy.turn = current_turn
 
-	var gate_pos := _get_gate_position(gate_id)
-	var spawn_pos := _get_spawn_position_for_gate(gate_id)
-
+	var spawn_pos := _get_enemy_spawn_position()
 	enemy.global_position = spawn_pos
+	if "current_state" in enemy:
+		enemy.current_state = 1 # State.CHASING_PLAYER
 	if "gate_position" in enemy:
-		enemy.gate_position = gate_pos
+		enemy.gate_position = spawn_pos
 
 	enemies_container.add_child(enemy)
 
 	# Monitora a eliminação do inimigo quando sair da árvore
 	enemy.tree_exited.connect(_on_enemy_defeated)
+
+## Retrocompatibilidade
+func _spawn_enemy_in_line(_gate_id: int = 0) -> void:
+	_spawn_enemy()
 
 
 

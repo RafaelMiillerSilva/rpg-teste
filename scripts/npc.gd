@@ -4,7 +4,7 @@ extends CharacterBody2D
 @export var npc_name: String = "Monge Curandeiro"
 
 ## Custo para contratar o monge como seguidor.
-@export var hiring_cost: int = 50
+@export var hiring_cost: int = 60
 
 ## Velocidade de caminhada do monge ao acompanhar o jogador.
 @export var follow_speed: float = 190.0
@@ -117,7 +117,7 @@ func trigger_dialogue() -> void:
 
 	if not is_hired:
 		var lines: Array[String] = [
-			"Olá! Sou um monge curandeiro. Deseja me contratar por 50 moedas de ouro para acompanhá-lo em sua jornada? [Pressione E para Contratar / Afaste-se para Recusar]"
+			"Olá, Majestade! Sou um monge curandeiro. Deseja me contratar por 60 moedas de ouro para acompanhá-lo em sua jornada? [Pressione E para Contratar / Afaste-se para Recusar]"
 		]
 		dialogue_box.start_dialogue(lines, npc_name)
 
@@ -126,7 +126,7 @@ func trigger_dialogue() -> void:
 			dialogue_box.dialogue_finished.connect(_on_hiring_dialogue_finished, CONNECT_ONE_SHOT)
 	else:
 		var lines: Array[String] = [
-			"Estou ao seu lado, nobre guerreiro! Minhas magias de cura restaurarão suas forças."
+			"Estou ao seu lado, nobre Rei! Minhas magias de cura restaurarão suas forças."
 		]
 		dialogue_box.start_dialogue(lines, npc_name)
 
@@ -157,17 +157,16 @@ func _on_hiring_dialogue_finished() -> void:
 			heal_timer.start(5.0)
 
 		SoundManager.play_coin()
-		SoundManager.play_heal()
 
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var confirm_lines: Array[String] = [
-				"Contrato firmado! Minhas bênçãos e poções o acompanharão em cada batalha."
+				"Contrato firmado! Minhas bênçãos e orações de cura o acompanharão em cada batalha."
 			]
 			dialogue_box.start_dialogue(confirm_lines, npc_name)
 	else:
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var fail_lines: Array[String] = [
-				"Você não possui as 50 moedas de ouro necessárias. Derrote mais monstros para juntar ouro!"
+				"Você não possui as 60 moedas de ouro necessárias. Derrote mais monstros para juntar ouro!"
 			]
 			dialogue_box.start_dialogue(fail_lines, npc_name)
 

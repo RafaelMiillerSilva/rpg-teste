@@ -1,21 +1,33 @@
 extends Node
 class_name SoundManager
 
-## Gerenciador de Áudio Retrô com síntese procedural 8-bit balanceada.
-## Volumes calibrados para um nível suave e confortável aos ouvidos.
+## Gerenciador Central de Áudio Oficial do RPG (RPG Essentials Free)
+## Gerencia pools de AudioStreamPlayer e executa efeitos sonoros com volumes balanceados.
 
 static var instance: SoundManager = null
 
-const SAMPLE_RATE: int = 22050
-const POOL_SIZE: int = 6
+const POOL_SIZE: int = 12
 
-## Volume master dos efeitos sonoros em decibéis (-15 dB é suave e seguro para fones)
-@export var master_volume_db: float = -15.0:
-	set(value):
-		master_volume_db = value
-		_update_players_volume()
+const PATH_SLASH: String = "res://assets/sounds/10_Battle_SFX/22_Slash_04.wav"
+const PATH_HIT: String = "res://assets/sounds/10_Battle_SFX/15_Impact_flesh_02.wav"
+const PATH_ENEMY_DEATH: String = "res://assets/sounds/10_Battle_SFX/69_Enemy_death_01.wav"
+const PATH_COIN: String = "res://assets/sounds/10_UI_Menu_SFX/079_Buy_sell_01.wav"
+const PATH_POTION: String = "res://assets/sounds/10_UI_Menu_SFX/051_use_item_01.wav"
+const PATH_HEAL: String = "res://assets/sounds/8_Buffs_Heals_SFX/02_Heal_02.wav"
+const PATH_ARROW: String = "res://assets/sounds/8_Atk_Magic_SFX/25_Wind_01.wav"
+const PATH_DIALOGUE: String = "res://assets/sounds/10_UI_Menu_SFX/013_Confirm_03.wav"
 
-var _sounds: Dictionary = {}
+const FALLBACK_PREFIX: String = "res://assets/sounds/rpg_essentials/"
+
+var stream_slash: AudioStream
+var stream_hit: AudioStream
+var stream_enemy_death: AudioStream
+var stream_coin: AudioStream
+var stream_potion: AudioStream
+var stream_heal: AudioStream
+var stream_arrow: AudioStream
+var stream_dialogue: AudioStream
+
 var _players: Array[AudioStreamPlayer] = []
 
 func _enter_tree() -> void:
@@ -26,193 +38,140 @@ func _ready() -> void:
 	_init_sounds()
 	_init_audio_pool()
 
+func _load_audio_file(path: String) -> AudioStream:
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res is AudioStream:
+			return res
+	var alt_path := path.replace("res://assets/sounds/", FALLBACK_PREFIX)
+	if ResourceLoader.exists(alt_path):
+		var res = load(alt_path)
+		if res is AudioStream:
+			return res
+	if FileAccess.file_exists(path):
+		var res = load(path)
+		if res is AudioStream:
+			return res
+	return null
+
+func _init_sounds() -> void:
+	stream_slash = _load_audio_file(PATH_SLASH)
+	stream_hit = _load_audio_file(PATH_HIT)
+	stream_enemy_death = _load_audio_file(PATH_ENEMY_DEATH)
+	stream_coin = _load_audio_file(PATH_COIN)
+	stream_potion = _load_audio_file(PATH_POTION)
+	stream_heal = _load_audio_file(PATH_HEAL)
+	stream_arrow = _load_audio_file(PATH_ARROW)
+	stream_dialogue = _load_audio_file(PATH_DIALOGUE)
+
 func _init_audio_pool() -> void:
+	if not _players.is_empty():
+		return
 	for i in range(POOL_SIZE):
 		var p := AudioStreamPlayer.new()
+		p.process_mode = Node.PROCESS_MODE_ALWAYS
 		p.bus = &"Master"
-		p.volume_db = master_volume_db
 		add_child(p)
 		_players.append(p)
-
-func _update_players_volume() -> void:
-	for p in _players:
-		if is_instance_valid(p):
-			p.volume_db = master_volume_db
 
 func _get_available_player() -> AudioStreamPlayer:
 	for p in _players:
 		if not p.playing:
 			return p
-	return _players[0]
+	# Se todos os canais estiverem ocupados, cria um novo dinamicamente
+	var p := AudioStreamPlayer.new()
+	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	p.bus = &"Master"
+	add_child(p)
+	_players.append(p)
+	return p
 
-func _play_sound(sound_name: String) -> void:
-	if _sounds.has(sound_name):
-		var p := _get_available_player()
-		p.stream = _sounds[sound_name]
-		p.volume_db = master_volume_db
-		p.play()
+func _play_stream(stream: AudioStream, volume_db: float = 0.0) -> void:
+	if not stream:
+		return
+	var p := _get_available_player()
+	p.stream = stream
+	p.volume_db = volume_db
+	p.play()
 
 ## Garante a existência da instância mesmo ao rodar cenas isoladas
 static func _ensure_instance() -> SoundManager:
 	if instance and is_instance_valid(instance):
+		if instance._players.is_empty():
+			instance._init_audio_pool()
 		return instance
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree and tree.root:
 		var node = tree.root.get_node_or_null("SoundManager")
 		if node and node is SoundManager:
 			instance = node
+			if instance._players.is_empty():
+				instance._init_sounds()
+				instance._init_audio_pool()
 			return instance
 		var new_mgr := SoundManager.new()
 		new_mgr.name = "SoundManager"
 		tree.root.add_child(new_mgr)
 		instance = new_mgr
+		instance._init_sounds()
+		instance._init_audio_pool()
 		return instance
 	return null
 
-## Define o volume geral dos efeitos (em dB)
-static func set_volume(db: float) -> void:
+## Golpe de espada: 22_Slash_04.wav (volume_db = -3)
+static func play_slash() -> void:
 	var mgr := _ensure_instance()
 	if mgr:
-		mgr.master_volume_db = db
+		mgr._play_stream(mgr.stream_slash, -3.0)
 
-## Tom suave e aveludado de corte para o golpe da espada
+## Dano de impacto na carne: 15_Impact_flesh_02.wav (volume_db = -2)
 static func play_hit() -> void:
 	var mgr := _ensure_instance()
 	if mgr:
-		mgr._play_sound("hit")
+		mgr._play_stream(mgr.stream_hit, -2.0)
 
-## Dois tons agudos suaves e melódicos (estilo sininho agradável)
+## Morte de monstros: 69_Enemy_death_01.wav
+static func play_enemy_death() -> void:
+	var mgr := _ensure_instance()
+	if mgr:
+		mgr._play_stream(mgr.stream_enemy_death, 0.0)
+
+## Coleta/compra com moedas de ouro: 079_Buy_sell_01.wav
 static func play_coin() -> void:
 	var mgr := _ensure_instance()
 	if mgr:
-		mgr._play_sound("coin")
+		mgr._play_stream(mgr.stream_coin, 0.0)
 
-## Arpeggio melódico relaxante e acolhedor de cura
+## Uso de poção de cura do inventário: 051_use_item_01.wav
+static func play_potion() -> void:
+	var mgr := _ensure_instance()
+	if mgr:
+		mgr._play_stream(mgr.stream_potion, 0.0)
+
+## Efeito divino/mágico de cura: 02_Heal_02.wav
 static func play_heal() -> void:
 	var mgr := _ensure_instance()
 	if mgr:
-		mgr._play_sound("heal")
+		mgr._play_stream(mgr.stream_heal, 0.0)
 
-## Tom de impacto abafado ao tomar dano, sem estalos
-static func play_damage() -> void:
+## Disparo da flecha cortando o vento: 25_Wind_01.wav (volume_db = -4)
+static func play_arrow() -> void:
 	var mgr := _ensure_instance()
 	if mgr:
-		mgr._play_sound("damage")
+		mgr._play_stream(mgr.stream_arrow, -4.0)
 
-# ==============================================================================
-# SÍNTESE PROCEDURAL DE ONDAS RETRÔ SUAVES
-# ==============================================================================
+## Avanço e confirmação de diálogo: 013_Confirm_03.wav (volume_db = -6)
+static func play_dialogue() -> void:
+	var mgr := _ensure_instance()
+	if mgr:
+		mgr._play_stream(mgr.stream_dialogue, -6.0)
 
-func _init_sounds() -> void:
-	_sounds["hit"] = _generate_hit_sound()
-	_sounds["coin"] = _generate_coin_sound()
-	_sounds["heal"] = _generate_heal_sound()
-	_sounds["damage"] = _generate_damage_sound()
+## Retrocompatibilidade para chamadas de dano
+static func play_damage() -> void:
+	play_hit()
 
-func _create_stream(bytes: PackedByteArray) -> AudioStreamWAV:
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_8_BITS
-	stream.mix_rate = SAMPLE_RATE
-	stream.stereo = false
-	stream.data = bytes
-	return stream
-
-func _generate_hit_sound() -> AudioStreamWAV:
-	var duration: float = 0.12
-	var count: int = int(duration * SAMPLE_RATE)
-	var bytes := PackedByteArray()
-	bytes.resize(count)
-
-	var phase: float = 0.0
-	for i in range(count):
-		var progress: float = float(i) / float(count)
-		var freq: float = lerp(200.0, 50.0, progress)
-		phase += freq / float(SAMPLE_RATE)
-
-		# Senóide com suave ruído rosa/branco atenuado para simular o ar da lâmina
-		var tone: float = sin(phase * TAU) * 0.7
-		var noise: float = randf_range(-0.15, 0.15)
-		var envelope: float = pow(1.0 - progress, 2.2)
-		var sample: float = (tone + noise) * envelope * 0.35
-		bytes[i] = clampi(int(sample * 127.0 + 128.0), 0, 255)
-
-	return _create_stream(bytes)
-
-func _generate_coin_sound() -> AudioStreamWAV:
-	var duration: float = 0.22
-	var count: int = int(duration * SAMPLE_RATE)
-	var bytes := PackedByteArray()
-	bytes.resize(count)
-
-	var phase: float = 0.0
-	var split_sample: int = int(0.06 * SAMPLE_RATE)
-
-	for i in range(count):
-		var freq: float
-		var envelope: float
-		if i < split_sample:
-			# Nota 1: Si5 (987.77 Hz) - toque suave
-			freq = 987.77
-			var t_note: float = float(i) / float(split_sample)
-			envelope = 1.0 - (t_note * 0.2)
-		else:
-			# Nota 2: Mi6 (1318.51 Hz) - brilho suave
-			freq = 1318.51
-			var t_note: float = float(i - split_sample) / float(count - split_sample)
-			envelope = pow(1.0 - t_note, 1.4)
-
-		phase += freq / float(SAMPLE_RATE)
-
-		# Senóide pura com leve harmônico quente (sem estridência de onda quadrada crua)
-		var sine: float = sin(phase * TAU)
-		var sub_harm: float = sin(phase * TAU * 0.5) * 0.2
-		var sample: float = (sine * 0.8 + sub_harm) * envelope * 0.30
-		bytes[i] = clampi(int(sample * 127.0 + 128.0), 0, 255)
-
-	return _create_stream(bytes)
-
-func _generate_heal_sound() -> AudioStreamWAV:
-	var duration: float = 0.32
-	var count: int = int(duration * SAMPLE_RATE)
-	var bytes := PackedByteArray()
-	bytes.resize(count)
-
-	var phase: float = 0.0
-	var note_duration: float = duration / 3.0
-	var note_samples: int = int(note_duration * SAMPLE_RATE)
-	var freqs: Array[float] = [523.25, 659.25, 783.99]
-
-	for i in range(count):
-		var note_idx: int = mini(int(float(i) / float(note_samples)), 2)
-		var freq: float = freqs[note_idx]
-		phase += freq / float(SAMPLE_RATE)
-
-		var local_t: float = float(i % note_samples) / float(note_samples)
-		# Envelope com curva suave em sino para cada nota
-		var env: float = sin(local_t * PI)
-		var wave: float = sin(phase * TAU) * 0.85 + sin(phase * TAU * 2.0) * 0.15
-		var sample: float = wave * env * 0.25
-		bytes[i] = clampi(int(sample * 127.0 + 128.0), 0, 255)
-
-	return _create_stream(bytes)
-
-func _generate_damage_sound() -> AudioStreamWAV:
-	var duration: float = 0.15
-	var count: int = int(duration * SAMPLE_RATE)
-	var bytes := PackedByteArray()
-	bytes.resize(count)
-
-	var phase: float = 0.0
-	for i in range(count):
-		var progress: float = float(i) / float(count)
-		var freq: float = lerp(140.0, 30.0, progress)
-		phase += freq / float(SAMPLE_RATE)
-
-		# Impacto grave abafado sem frequências agudas perfurantes
-		var tone: float = sin(phase * TAU) * 0.7
-		var noise: float = randf_range(-0.1, 0.1)
-		var envelope: float = pow(1.0 - progress, 2.0)
-		var sample: float = (tone + noise) * envelope * 0.32
-		bytes[i] = clampi(int(sample * 127.0 + 128.0), 0, 255)
-
-	return _create_stream(bytes)
+## Retrocompatibilidade para alteração de volume mestre
+static func set_volume(db: float) -> void:
+	var bus_idx := AudioServer.get_bus_index("Master")
+	if bus_idx >= 0:
+		AudioServer.set_bus_volume_db(bus_idx, db)

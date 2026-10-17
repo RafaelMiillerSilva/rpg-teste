@@ -29,6 +29,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if pressed_advance:
 		get_viewport().set_input_as_handled()
+		SoundManager.play_dialogue()
 		advance_dialogue()
 
 ## Inicia a exibição da sequência de falas do NPC

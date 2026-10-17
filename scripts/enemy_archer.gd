@@ -68,7 +68,7 @@ func _update_speed() -> void:
 	speed = base_speed + float(maxi(0, turn - 1)) * speed_increase_per_turn
 
 func _is_inside_village() -> bool:
-	return global_position.x >= 140.0 and global_position.x <= 1860.0 and global_position.y >= 140.0 and global_position.y <= 1360.0
+	return global_position.x >= 250.0 and global_position.x <= 7750.0 and global_position.y >= 250.0 and global_position.y <= 5750.0
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -112,7 +112,7 @@ func _physics_process(delta: float) -> void:
 			if not _is_inside_village():
 				time_outside += delta
 				if time_outside > 2.0:
-					global_position = Vector2(clampf(global_position.x, 200.0, 1800.0), clampf(global_position.y, 200.0, 1300.0))
+					global_position = Vector2(clampf(global_position.x, 350.0, 7650.0), clampf(global_position.y, 350.0, 5650.0))
 					time_outside = 0.0
 			else:
 				time_outside = 0.0
@@ -228,6 +228,7 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:
 		return
 
+	SoundManager.play_hit()
 	health -= amount
 
 	if knockback_dir != Vector2.ZERO:
@@ -248,6 +249,8 @@ func _die() -> void:
 	is_dead = true
 	is_shooting = false
 
+	SoundManager.play_enemy_death()
+
 	set_physics_process(false)
 	collision_layer = 0
 	collision_mask = 0
@@ -263,20 +266,30 @@ func _die() -> void:
 	death_tween.chain().tween_callback(_on_death_complete)
 
 func _on_death_complete() -> void:
-	_drop_gold()
+	_drop_loot()
 	queue_free()
 
-func _drop_gold() -> void:
+func _drop_loot() -> void:
 	if not ITEM_PICKUP_SCENE:
 		return
+
+	var world_scene := get_tree().current_scene
+	var pickups_container := world_scene.get_node_or_null("Pickups") if world_scene else null
+	var parent_node := pickups_container if pickups_container else get_parent()
+	if not parent_node:
+		return
+
+	# Drop garantido de 1 moeda de ouro
 	var coin := ITEM_PICKUP_SCENE.instantiate()
 	if "item_type" in coin:
 		coin.item_type = "coin"
 	coin.global_position = global_position
+	parent_node.add_child(coin)
 
-	var world_scene := get_tree().current_scene
-	var pickups_container := world_scene.get_node_or_null("Pickups") if world_scene else null
-	if pickups_container:
-		pickups_container.add_child(coin)
-	elif get_parent():
-		get_parent().add_child(coin)
+	# 10% de chance de dropar também uma Poção de Vida
+	if randf() <= 0.10:
+		var potion := ITEM_PICKUP_SCENE.instantiate()
+		if "item_type" in potion:
+			potion.item_type = "potion"
+		potion.global_position = global_position + Vector2(randf_range(-14.0, 14.0), randf_range(-14.0, 14.0))
+		parent_node.add_child(potion)

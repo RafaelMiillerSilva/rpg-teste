@@ -1,80 +1,80 @@
 [gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player_script"]
-[ext_resource type="Texture2D" uid="uid://dfqig6h1c41st" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Idle.png" id="2_warrior_idle"]
-[ext_resource type="Texture2D" uid="uid://bsfyrv6c7j4nr" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Run.png" id="3_warrior_run"]
-[ext_resource type="Texture2D" uid="uid://bpnbmtj7cwafu" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Attack1.png" id="4_warrior_attack"]
+[ext_resource type="Texture2D" path="res://assets/sprites/blue_king_idle.png" id="2_king_idle"]
+[ext_resource type="Texture2D" path="res://assets/sprites/blue_king_run.png" id="3_king_run"]
+[ext_resource type="Texture2D" path="res://assets/sprites/blue_king_atack.png" id="4_king_attack"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(0, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_1"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(192, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_2"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(384, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_3"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(576, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_4"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(768, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_5"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(960, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_6"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(1152, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_7"]
-atlas = ExtResource("2_warrior_idle")
+atlas = ExtResource("2_king_idle")
 region = Rect2(1344, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk_0"]
-atlas = ExtResource("3_warrior_run")
+atlas = ExtResource("3_king_run")
 region = Rect2(0, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk_1"]
-atlas = ExtResource("3_warrior_run")
+atlas = ExtResource("3_king_run")
 region = Rect2(192, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk_2"]
-atlas = ExtResource("3_warrior_run")
+atlas = ExtResource("3_king_run")
 region = Rect2(384, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk_3"]
-atlas = ExtResource("3_warrior_run")
+atlas = ExtResource("3_king_run")
 region = Rect2(576, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk_4"]
-atlas = ExtResource("3_warrior_run")
+atlas = ExtResource("3_king_run")
 region = Rect2(768, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk_5"]
-atlas = ExtResource("3_warrior_run")
+atlas = ExtResource("3_king_run")
 region = Rect2(960, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_attack_0"]
-atlas = ExtResource("4_warrior_attack")
+atlas = ExtResource("4_king_attack")
 region = Rect2(0, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_attack_1"]
-atlas = ExtResource("4_warrior_attack")
+atlas = ExtResource("4_king_attack")
 region = Rect2(192, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_attack_2"]
-atlas = ExtResource("4_warrior_attack")
+atlas = ExtResource("4_king_attack")
 region = Rect2(384, 0, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_attack_3"]
-atlas = ExtResource("4_warrior_attack")
+atlas = ExtResource("4_king_attack")
 region = Rect2(576, 0, 192, 192)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_player"]
@@ -106,7 +106,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"idle",
-"speed": 10.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -153,9 +153,10 @@ animations = [{
 size = Vector2(32, 32)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sword"]
-size = Vector2(72, 36)
+size = Vector2(65, 55)
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
+y_sort_enabled = true
 texture_filter = 1
 collision_layer = 1
 collision_mask = 3
@@ -172,18 +173,22 @@ position = Vector2(0, 25)
 shape = SubResource("RectangleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+limit_left = 0
+limit_top = 0
+limit_right = 8000
+limit_bottom = 6000
 position_smoothing_enabled = true
 
 [node name="SwordHitbox" type="Area2D" parent="."]
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SwordHitbox"]
-position = Vector2(36, 0)
+position = Vector2(45, 15)
 shape = SubResource("RectangleShape2D_sword")
 disabled = true
 
 [node name="HealParticles" type="CPUParticles2D" parent="."]
-position = Vector2(0, 15)
+position = Vector2(0, 25)
 emitting = false
 amount = 20
 lifetime = 0.8

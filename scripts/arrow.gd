@@ -20,6 +20,7 @@ func _ready() -> void:
 	if direction != Vector2.ZERO:
 		rotation = direction.angle()
 	body_entered.connect(_on_body_entered)
+	SoundManager.play_arrow()
 
 func _process(delta: float) -> void:
 	_lifetime += delta
@@ -42,7 +43,6 @@ func _on_body_entered(body: Node2D) -> void:
 			set_deferred("monitoring", false)
 			if body.has_method("take_damage"):
 				body.take_damage(damage, direction)
-			SoundManager.play_hit()
 			queue_free()
 			return
 		# Ignora jogador e outros aliados/NPCs

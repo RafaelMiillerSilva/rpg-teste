@@ -20,7 +20,7 @@ const SAVE_FILE_PATH: String = "user://savegame.json"
 @export var max_health: int = 100
 
 ## Dano do golpe do jogador.
-@export var attack_damage: int = 15
+@export var attack_damage: int = 25
 
 ## Quantidade de moedas coletadas pelo jogador.
 @export var coins: int = 0
@@ -63,8 +63,11 @@ func _ready() -> void:
 
 	if animated_sprite:
 		animated_sprite.play("idle")
+		_update_sprite_offset()
 		if not animated_sprite.animation_finished.is_connected(_on_animation_finished):
 			animated_sprite.animation_finished.connect(_on_animation_finished)
+		if not animated_sprite.frame_changed.is_connected(_on_sprite_frame_changed):
+			animated_sprite.frame_changed.connect(_on_sprite_frame_changed)
 
 	if sword_hitbox:
 		sword_hitbox.visible = false
@@ -95,8 +98,9 @@ func _physics_process(delta: float) -> void:
 	if not can_move:
 		velocity = Vector2.ZERO
 		move_and_slide()
-		if animated_sprite and not is_attacking:
+		if animated_sprite and not is_attacking and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
+			_update_sprite_offset()
 		return
 
 	# Captura o vetor de movimentação em 8 direções
@@ -117,9 +121,13 @@ func _physics_process(delta: float) -> void:
 	var is_moving: bool = velocity.length() > 20.0
 	if animated_sprite and not is_attacking:
 		if is_moving:
-			animated_sprite.play("walk")
+			if animated_sprite.animation != "walk":
+				animated_sprite.play("walk")
+				_update_sprite_offset()
 		else:
-			animated_sprite.play("idle")
+			if animated_sprite.animation != "idle":
+				animated_sprite.play("idle")
+				_update_sprite_offset()
 
 	# Acionamento do ataque por Espaço (ui_select / attack)
 	if Input.is_action_just_pressed("attack") or Input.is_action_just_pressed("ui_select"):
@@ -171,6 +179,7 @@ func freeze() -> void:
 	velocity = Vector2.ZERO
 	if animated_sprite:
 		animated_sprite.play("idle")
+		_update_sprite_offset()
 
 ## Descongela movimentação e ações do jogador
 func unfreeze() -> void:
@@ -197,7 +206,7 @@ func use_potion() -> void:
 	if potions > 0 and current_health < max_health:
 		potions -= 1
 		potions_changed.emit(potions)
-		SoundManager.play_heal()
+		SoundManager.play_potion()
 		heal(35)
 
 ## Recupera pontos de vida e emite atualização
@@ -270,49 +279,63 @@ func load_game() -> void:
 
 		print("Jogo carregado com sucesso!")
 
-## Executa o ataque corpo a corpo com animação e rotação/swing da hitbox
+## Executa o ataque mágico com o cajado do Rei Azul
 func attack() -> void:
 	if is_attacking or not can_move:
 		return
 
 	is_attacking = true
-	SoundManager.play_hit()
 
 	# Vira o sprite para a direção do golpe
 	if animated_sprite:
 		if abs(last_direction.x) > 0.01:
 			animated_sprite.flip_h = last_direction.x < 0.0
 		animated_sprite.play("attack")
+		_update_sprite_offset()
 
+	# Prepara a posição e ângulo da hitbox mágica do cajado
 	if sword_hitbox and sword_collision:
-		var base_angle: float = last_direction.angle()
-		var start_angle: float = base_angle - deg_to_rad(65.0)
-		var end_angle: float = base_angle + deg_to_rad(65.0)
+		sword_hitbox.position = last_direction * 40.0 + Vector2(0, 15.0)
+		sword_hitbox.rotation = last_direction.angle()
+		sword_collision.disabled = true
+		sword_hitbox.visible = false
 
-		sword_hitbox.position = last_direction * 40.0
-		sword_hitbox.rotation = start_angle
-		sword_hitbox.visible = true
-		sword_collision.disabled = false
+## Sincronização visual: ativa o dano no momento exato do arco de energia mágica (Frame 2)
+func _on_sprite_frame_changed() -> void:
+	if is_attacking and animated_sprite and animated_sprite.animation == "attack":
+		if animated_sprite.frame == 2:
+			SoundManager.play_slash()
+			if is_instance_valid(sword_collision):
+				sword_collision.disabled = false
+			if is_instance_valid(sword_hitbox):
+				sword_hitbox.visible = true
+		elif animated_sprite.frame == 3:
+			_deactivate_staff_hitbox()
 
-		var sword_tween := create_tween()
-		sword_tween.tween_property(sword_hitbox, "rotation", end_angle, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		sword_tween.tween_callback(_on_attack_hit_window_finished)
-	else:
-		is_attacking = false
-
-func _on_attack_hit_window_finished() -> void:
+func _deactivate_staff_hitbox() -> void:
 	if is_instance_valid(sword_collision):
 		sword_collision.disabled = true
 	if is_instance_valid(sword_hitbox):
 		sword_hitbox.visible = false
 
+func _on_attack_hit_window_finished() -> void:
+	_deactivate_staff_hitbox()
+
 func _on_animation_finished() -> void:
 	if animated_sprite and animated_sprite.animation == "attack":
+		_deactivate_staff_hitbox()
 		is_attacking = false
 		if can_move and velocity.length() > 20.0:
 			animated_sprite.play("walk")
 		else:
 			animated_sprite.play("idle")
+		_update_sprite_offset()
+
+## Mantém o offset zero já que todos os frames estão padronizados em 192x192 com pés alinhados
+func _update_sprite_offset() -> void:
+	if not animated_sprite:
+		return
+	animated_sprite.offset = Vector2.ZERO
 
 func _on_sword_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies") and body.has_method("take_damage"):
@@ -330,7 +353,7 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 	health_changed.emit(current_health, max_health)
 
 	# Efeitos visuais e sonoros de impacto
-	SoundManager.play_damage()
+	SoundManager.play_hit()
 	screen_shake(0.2, 7.0)
 
 	# Empurrão para trás
@@ -370,6 +393,7 @@ func _setup_default_inputs() -> void:
 	_register_action("use_potion", [KEY_Q])
 	_register_action("save_game", [KEY_F6])
 	_register_action("load_game", [KEY_F7])
+	_register_action("pause", [KEY_ESCAPE])
 
 func _register_action(action_name: String, keycodes: Array[Key]) -> void:
 	if not InputMap.has_action(action_name):

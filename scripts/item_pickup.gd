@@ -8,8 +8,8 @@ extends Area2D
 @onready var sprite: Sprite2D = $Sprite2D if has_node("Sprite2D") else null
 @onready var color_rect = $Sprite2D # Retrocompatibilidade
 
-const COLOR_COIN: Color = Color(1.0, 1.0, 1.0, 1.0)
-const COLOR_POTION: Color = Color(1.0, 0.35, 0.55, 1.0)
+const COIN_TEXTURE: Texture2D = preload("res://assets/tiny_swords/Terrain/Resources/Gold/Gold Resource/Gold_Resource.png")
+const POTION_TEXTURE: Texture2D = preload("res://assets/sprites/potion.png")
 
 var _bob_tween: Tween
 
@@ -23,9 +23,15 @@ func _update_appearance() -> void:
 	if not sprite:
 		return
 	if item_type == "potion":
-		sprite.modulate = COLOR_POTION
+		sprite.texture = POTION_TEXTURE
+		sprite.scale = Vector2(1.0, 1.0)
+		sprite.modulate = Color.WHITE
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	else:
-		sprite.modulate = COLOR_COIN
+		sprite.texture = COIN_TEXTURE
+		sprite.scale = Vector2(0.4, 0.4)
+		sprite.modulate = Color.WHITE
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 ## Animação de flutuação suave infinita (bobbing effect) via Tween
 func _start_bobbing() -> void:
@@ -52,7 +58,7 @@ func _on_body_entered(body: Node2D) -> void:
 			if body.has_signal("coins_changed"):
 				body.coins_changed.emit(body.coins)
 	elif item_type == "potion":
-		SoundManager.play_heal()
+		SoundManager.play_potion()
 		if body.has_method("add_potions"):
 			body.add_potions(1)
 		elif "potions" in body:

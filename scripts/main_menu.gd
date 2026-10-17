@@ -18,8 +18,31 @@ func _ready() -> void:
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
 
+	_load_audio_settings()
 	if status_label:
 		status_label.text = ""
+
+func _load_audio_settings() -> void:
+	const SETTINGS_FILE_PATH: String = "user://audio_settings.json"
+	if FileAccess.file_exists(SETTINGS_FILE_PATH):
+		var file := FileAccess.open(SETTINGS_FILE_PATH, FileAccess.READ)
+		if file:
+			var content := file.get_as_text()
+			file.close()
+			var json := JSON.new()
+			if json.parse(content) == OK and typeof(json.data) == TYPE_DICTIONARY:
+				if json.data.has("master_volume"):
+					var val: float = float(json.data["master_volume"])
+					var bus_idx := AudioServer.get_bus_index("Master")
+					if bus_idx < 0:
+						bus_idx = 0
+					if val <= 0.01:
+						AudioServer.set_bus_mute(bus_idx, true)
+					else:
+						AudioServer.set_bus_mute(bus_idx, false)
+						var t: float = clampf(val / 100.0, 0.00001, 1.0)
+						var linear: float = pow(t, 2.5)
+						AudioServer.set_bus_volume_db(bus_idx, linear_to_db(linear))
 
 func _on_new_game_pressed() -> void:
 	SoundManager.play_coin()

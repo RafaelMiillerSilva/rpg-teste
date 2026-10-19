@@ -153,7 +153,7 @@ animations = [{
 size = Vector2(32, 32)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sword"]
-size = Vector2(65, 55)
+size = Vector2(80, 70)
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 y_sort_enabled = true
@@ -181,9 +181,11 @@ position_smoothing_enabled = true
 
 [node name="SwordHitbox" type="Area2D" parent="."]
 visible = false
+collision_layer = 0
+collision_mask = 7
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SwordHitbox"]
-position = Vector2(45, 15)
+position = Vector2(0, 0)
 shape = SubResource("RectangleShape2D_sword")
 disabled = true
 

@@ -177,13 +177,13 @@ size = Vector2(32, 24)
 radius = 70.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spear"]
-size = Vector2(80, 24)
+size = Vector2(150, 64)
 
-[node name="NPCLancer" type="CharacterBody2D" groups=["allies", "npcs"]]
+[node name="NPCLancer" type="CharacterBody2D" groups=["npcs"]]
 y_sort_enabled = true
 texture_filter = 1
-collision_layer = 4
-collision_mask = 1
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_lancer_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -195,9 +195,12 @@ autoplay = "idle"
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 30)
 shape = SubResource("RectangleShape2D_lancer")
+disabled = true
 
 [node name="InteractionArea" type="Area2D" parent="."]
 position = Vector2(0, 20)
+collision_layer = 0
+collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
 shape = SubResource("CircleShape2D_interaction")
@@ -216,7 +219,7 @@ horizontal_alignment = 1
 
 [node name="SpearHitbox" type="Area2D" parent="."]
 collision_layer = 0
-collision_mask = 2
+collision_mask = 7
 monitoring = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SpearHitbox"]

@@ -12,6 +12,9 @@ extends Area2D
 ## Define se a flecha foi disparada por um aliado (atinge inimigos) ou por um inimigo (atinge o jogador).
 @export var is_player_ally: bool = false
 
+## Referência a quem disparou a flecha (para transferência de agro)
+var shooter: Node2D = null
+
 var _lifetime: float = 0.0
 const MAX_LIFETIME: float = 3.0
 var _has_hit: bool = false
@@ -36,25 +39,27 @@ func _on_body_entered(body: Node2D) -> void:
 	if _has_hit:
 		return
 
+	var valid_shooter: Node2D = shooter if is_instance_valid(shooter) else null
+
 	if is_player_ally:
 		# Flecha aliada: atinge apenas nós do grupo 'enemies'
 		if body.is_in_group("enemies"):
 			_has_hit = true
 			set_deferred("monitoring", false)
 			if body.has_method("take_damage"):
-				body.take_damage(damage, direction)
+				body.take_damage(damage, direction, valid_shooter)
 			queue_free()
 			return
 		# Ignora jogador e outros aliados/NPCs
 		elif body.is_in_group("player") or body.is_in_group("npcs") or body.is_in_group("allies"):
 			return
 	else:
-		# Flecha de monstro: atinge apenas o jogador
-		if body.is_in_group("player"):
+		# Flecha de monstro: atinge jogador ou aliados do esquadrão
+		if body.is_in_group("player") or body.is_in_group("allies"):
 			_has_hit = true
 			set_deferred("monitoring", false)
 			if body.has_method("take_damage"):
-				body.take_damage(damage, direction)
+				body.take_damage(damage, direction, valid_shooter)
 			queue_free()
 			return
 		# Ignora outros inimigos
@@ -66,4 +71,3 @@ func _on_body_entered(body: Node2D) -> void:
 		_has_hit = true
 		set_deferred("monitoring", false)
 		queue_free()
-

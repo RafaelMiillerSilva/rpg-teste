@@ -1,0 +1,419 @@
+[gd_scene load_steps=82 format=3]
+
+[ext_resource type="Script" path="res://scripts/npc_citizen_pawn.gd" id="1_citizen_script"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Axe.png" id="2_axe_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Hammer.png" id="3_hammer_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Knife.png" id="4_knife_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Meat.png" id="5_meat_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Pickaxe.png" id="6_pickaxe_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Wood.png" id="7_wood_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle.png" id="8_normal_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Pawn/Pawn_Idle Gold.png" id="9_gold_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_0"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_1"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_2"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_3"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_4"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_5"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_6"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_axe_7"]
+atlas = ExtResource("2_axe_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_0"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_1"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_2"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_3"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_4"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_5"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_6"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hammer_7"]
+atlas = ExtResource("3_hammer_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_0"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_1"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_2"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_3"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_4"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_5"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_6"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_knife_7"]
+atlas = ExtResource("4_knife_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_0"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_1"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_2"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_3"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_4"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_5"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_6"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_meat_7"]
+atlas = ExtResource("5_meat_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_0"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_1"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_2"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_3"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_4"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_5"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_6"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pickaxe_7"]
+atlas = ExtResource("6_pickaxe_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_0"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_1"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_2"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_3"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_4"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_5"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_6"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wood_7"]
+atlas = ExtResource("7_wood_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_0"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_1"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_2"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_3"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_4"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_5"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_6"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_normal_7"]
+atlas = ExtResource("8_normal_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_0"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_1"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_2"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_3"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_4"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_5"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_6"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gold_7"]
+atlas = ExtResource("9_gold_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_citizen"]
+animations = [{
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_axe_7")}],
+"loop": true,
+"name": &"axe",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_hammer_7")}],
+"loop": true,
+"name": &"hammer",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_knife_7")}],
+"loop": true,
+"name": &"knife",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_meat_7")}],
+"loop": true,
+"name": &"meat",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_pickaxe_7")}],
+"loop": true,
+"name": &"pickaxe",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_wood_7")}],
+"loop": true,
+"name": &"wood",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_normal_7")}],
+"loop": true,
+"name": &"normal",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_gold_7")}],
+"loop": true,
+"name": &"gold",
+"speed": 10.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
+radius = 48.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_col"]
+size = Vector2(24, 18)
+
+[node name="NPCCitizenPawn" type="CharacterBody2D" groups=["citizens", "npcs"]]
+y_sort_enabled = true
+texture_filter = 1
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_citizen_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(0.7, 0.7)
+sprite_frames = SubResource("SpriteFrames_citizen")
+animation = &"axe"
+autoplay = "axe"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 14)
+shape = SubResource("RectangleShape2D_col")
+disabled = true
+
+[node name="InteractionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+position = Vector2(0, 10)
+shape = SubResource("CircleShape2D_interact")
+
+[node name="InteractionLabel" type="Label" parent="."]
+visible = false
+offset_left = -60.0
+offset_top = -36.0
+offset_right = 60.0
+offset_bottom = -18.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "[E] Conversar"
+horizontal_alignment = 1

@@ -32,19 +32,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		SoundManager.play_dialogue()
 		advance_dialogue()
 
-## Inicia a exibição da sequência de falas do NPC
-func start_dialogue(lines: Array[String], speaker_name: String = "NPC") -> void:
-	if lines.is_empty():
+## Inicia a exibição da sequência de falas do NPC (aceita Array[String] ou String direta)
+func start_dialogue(lines: Variant, speaker_name: String = "NPC") -> void:
+	dialogue_lines.clear()
+	if lines is String:
+		if (lines as String).strip_edges().is_empty():
+			return
+		dialogue_lines.append(lines as String)
+	elif lines is Array:
+		if (lines as Array).is_empty():
+			return
+		for item in lines:
+			dialogue_lines.append(str(item))
+	else:
 		return
 
-	dialogue_lines = lines
 	current_index = 0
 	is_active = true
 
 	# Congela o jogador durante a conversa
-	var player := get_tree().get_first_node_in_group("player")
-	if player and player.has_method("freeze"):
-		player.freeze()
+	if is_inside_tree():
+		var player := get_tree().get_first_node_in_group("player")
+		if player and player.has_method("freeze"):
+			player.freeze()
 
 	if name_label:
 		name_label.text = speaker_name

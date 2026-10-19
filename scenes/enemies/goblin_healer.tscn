@@ -1,0 +1,163 @@
+[gd_scene load_steps=34 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/goblin_healer.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/monsters/goblin/standardized/healer_idle.png" id="2_idle_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/monsters/goblin/standardized/healer_run.png" id="3_run_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/monsters/goblin/standardized/healer_heal.png" id="4_heal_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_1"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_2"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_3"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_4"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_5"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_run_0"]
+atlas = ExtResource("3_run_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_run_1"]
+atlas = ExtResource("3_run_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_run_2"]
+atlas = ExtResource("3_run_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_run_3"]
+atlas = ExtResource("3_run_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_run_4"]
+atlas = ExtResource("3_run_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_run_5"]
+atlas = ExtResource("3_run_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_0"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_1"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_2"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_3"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_4"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_5"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(960, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_6"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(1152, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_7"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(1344, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_8"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(1536, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_9"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(1728, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heal_10"]
+atlas = ExtResource("4_heal_tex")
+region = Rect2(1920, 0, 192, 192)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_goblin"]
+animations = [{
+"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_5")}],
+"loop": true,
+"name": &"idle",
+"speed": 10.0}, {"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_run_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_run_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_run_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_run_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_run_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_run_5")}],
+"loop": true,
+"name": &"run",
+"speed": 10.0}, {"frames": [{"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_0")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_1")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_2")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_3")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_4")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_5")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_6")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_7")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_8")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_9")}, {"duration": 1.0,
+"texture": SubResource("AtlasTexture_heal_10")}],
+"loop": false,
+"name": &"heal",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(48, 56)
+
+[node name="Goblin" type="CharacterBody2D" groups=["enemies"]]
+y_sort_enabled = true
+texture_filter = 1
+collision_layer = 3
+collision_mask = 3
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(1.35, 1.35)
+sprite_frames = SubResource("SpriteFrames_goblin")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 21)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+offset_left = -26.0
+offset_top = -38.0
+offset_right = 26.0
+offset_bottom = -32.0
+show_percentage = false

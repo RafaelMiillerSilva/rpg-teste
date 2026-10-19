@@ -17,6 +17,10 @@ var time_outside: float = 0.0
 
 ## Vida inicial do arqueiro vermelho.
 @export var health: int = 25
+@export var max_health: int = 25
+
+## Armadura do arqueiro vermelho
+@export var armor: int = 1
 
 ## Velocidade base de movimentação.
 @export var base_speed: float = 80.0
@@ -39,7 +43,7 @@ const MAX_DISTANCE: float = 400.0
 
 var is_shooting: bool = false
 var is_dead: bool = false
-var target_player: CharacterBody2D = null
+var target_player: Node2D = null
 
 ## Temporizador procedural para cadência lenta de tiro (2.8 a 3.2s)
 var shoot_timer: float = 0.0
@@ -49,12 +53,30 @@ const ARROW_SCENE: PackedScene = preload("res://scenes/arrow.tscn")
 const ITEM_PICKUP_SCENE: PackedScene = preload("res://scenes/item_pickup.tscn")
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var health_bar: ProgressBar = $HealthBar if has_node("HealthBar") else null
 
 func _ready() -> void:
 	add_to_group("enemies")
 	_update_speed()
+	max_health = health
+	if health_bar:
+		var bg_style := StyleBoxFlat.new()
+		bg_style.bg_color = Color(0.12, 0.12, 0.12, 0.85)
+		bg_style.set_corner_radius_all(2)
+		health_bar.add_theme_stylebox_override("background", bg_style)
+
+		var fill_style := StyleBoxFlat.new()
+		fill_style.bg_color = Color(0.90, 0.15, 0.15, 1.0)
+		fill_style.set_corner_radius_all(2)
+		health_bar.add_theme_stylebox_override("fill", fill_style)
+
+		health_bar.max_value = max_health
+		health_bar.value = health
+		health_bar.show_percentage = false
 	next_shoot_interval = randf_range(2.8, 3.2)
 	shoot_timer = randf_range(0.5, 1.5) # Disparo inicial dessincronizado
+
+	target_player = get_tree().get_first_node_in_group("player") as Node2D
 
 	if gate_position == Vector2.ZERO or _is_inside_village():
 		current_state = State.CHASING_PLAYER
@@ -80,9 +102,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		avoidance_direction = Vector2.ZERO
 
-	# Garante referência ao jogador
-	if not is_instance_valid(target_player):
-		target_player = get_tree().get_first_node_in_group("player") as CharacterBody2D
+	# Garante referência ao alvo válido (ou retorna ao Rei se o alvo tiver morrido)
+	if not is_instance_valid(target_player) or ("is_dead" in target_player and target_player.is_dead):
+		target_player = get_tree().get_first_node_in_group("player") as Node2D
 
 	var base_direction := Vector2.ZERO
 
@@ -209,6 +231,8 @@ func _shoot_at_player(player_node: CharacterBody2D) -> void:
 		arrow.speed = 450.0
 		arrow.damage = 15
 		arrow.is_player_ally = false
+		if "shooter" in arrow:
+			arrow.shooter = self
 
 		var scene_root := get_tree().current_scene
 		if scene_root:
@@ -224,12 +248,22 @@ func _on_animation_finished() -> void:
 		else:
 			animated_sprite.play("idle")
 
-func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, attacker = null) -> void:
 	if is_dead:
 		return
 
 	SoundManager.play_hit()
-	health -= amount
+	var final_damage := maxi(1, amount - armor)
+	health -= final_damage
+
+	if health_bar:
+		health_bar.value = health
+
+	# IA Avançada de Agro: foca em quem feriu o arqueiro se estiver no alcance
+	if is_instance_valid(attacker) and attacker != self:
+		var dist_to_atk: float = global_position.distance_to(attacker.global_position)
+		if dist_to_atk <= 450.0:
+			target_player = attacker
 
 	if knockback_dir != Vector2.ZERO:
 		velocity = knockback_dir * 220.0
@@ -251,11 +285,18 @@ func _die() -> void:
 
 	SoundManager.play_enemy_death()
 
+	velocity = Vector2.ZERO
 	set_physics_process(false)
 	collision_layer = 0
 	collision_mask = 0
 	if has_node("CollisionShape2D"):
 		$CollisionShape2D.set_deferred("disabled", true)
+
+	if animated_sprite:
+		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("idle"):
+			animated_sprite.play("idle")
+			animated_sprite.frame = 0
+		animated_sprite.stop()
 
 	var death_tween := create_tween().set_parallel(true)
 	var fall_angle: float = 90.0 if (animated_sprite and animated_sprite.flip_h) else -90.0

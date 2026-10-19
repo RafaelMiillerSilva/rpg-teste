@@ -1,8 +1,11 @@
 extends CharacterBody2D
 
+const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
+
 signal health_changed(current: int, max_hp: int)
 signal coins_changed(new_amount: int)
 signal potions_changed(new_amount: int)
+signal armor_changed(total_armor: int)
 signal game_saved()
 
 const SAVE_FILE_PATH: String = "user://savegame.json"
@@ -16,11 +19,14 @@ const SAVE_FILE_PATH: String = "user://savegame.json"
 ## Taxa de desaceleração (fricção) até parar completamente.
 @export var friction: float = 1800.0
 
-## Vida máxima do jogador.
+## Vida máxima base do jogador.
 @export var max_health: int = 100
 
-## Dano do golpe do jogador.
+## Dano do golpe base do jogador.
 @export var attack_damage: int = 25
+
+## Armadura base do jogador (absorção direta de dano).
+@export var armor: int = 2
 
 ## Quantidade de moedas coletadas pelo jogador.
 @export var coins: int = 0
@@ -45,6 +51,7 @@ var is_invulnerable: bool = false
 
 ## Controle de tremor de tela (screen shake)
 var _shake_tween: Tween
+var _current_attack_hit_bodies: Array[Node2D] = []
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var sprite = $AnimatedSprite2D # Retrocompatibilidade
@@ -59,7 +66,11 @@ func _ready() -> void:
 	add_to_group("player")
 	_setup_default_inputs()
 
+	max_health = 100 + UpgradeManager.get_bonus_health()
 	current_health = max_health
+
+	if not UpgradeManager.upgrades_changed.is_connected(_on_upgrades_changed):
+		UpgradeManager.upgrades_changed.connect(_on_upgrades_changed)
 
 	if animated_sprite:
 		animated_sprite.play("idle")
@@ -84,6 +95,7 @@ func _ready() -> void:
 	health_changed.emit(current_health, max_health)
 	coins_changed.emit(coins)
 	potions_changed.emit(potions)
+	armor_changed.emit(get_total_armor())
 
 func _physics_process(delta: float) -> void:
 	# Atalhos de save/load e poção via Input actions
@@ -285,6 +297,7 @@ func attack() -> void:
 		return
 
 	is_attacking = true
+	_current_attack_hit_bodies.clear()
 
 	# Vira o sprite para a direção do golpe
 	if animated_sprite:
@@ -295,7 +308,7 @@ func attack() -> void:
 
 	# Prepara a posição e ângulo da hitbox mágica do cajado
 	if sword_hitbox and sword_collision:
-		sword_hitbox.position = last_direction * 40.0 + Vector2(0, 15.0)
+		sword_hitbox.position = last_direction * 35.0 + Vector2(0, 15.0)
 		sword_hitbox.rotation = last_direction.angle()
 		sword_collision.disabled = true
 		sword_hitbox.visible = false
@@ -309,6 +322,8 @@ func _on_sprite_frame_changed() -> void:
 				sword_collision.disabled = false
 			if is_instance_valid(sword_hitbox):
 				sword_hitbox.visible = true
+				for b in sword_hitbox.get_overlapping_bodies():
+					_on_sword_hitbox_body_entered(b)
 		elif animated_sprite.frame == 3:
 			_deactivate_staff_hitbox()
 
@@ -325,6 +340,7 @@ func _on_animation_finished() -> void:
 	if animated_sprite and animated_sprite.animation == "attack":
 		_deactivate_staff_hitbox()
 		is_attacking = false
+		_current_attack_hit_bodies.clear()
 		if can_move and velocity.length() > 20.0:
 			animated_sprite.play("walk")
 		else:
@@ -338,18 +354,37 @@ func _update_sprite_offset() -> void:
 	animated_sprite.offset = Vector2.ZERO
 
 func _on_sword_hitbox_body_entered(body: Node2D) -> void:
+	if not is_attacking or body in _current_attack_hit_bodies:
+		return
 	if body.is_in_group("enemies") and body.has_method("take_damage"):
+		_current_attack_hit_bodies.append(body)
 		var knockback_dir: Vector2 = (body.global_position - global_position).normalized()
 		if knockback_dir == Vector2.ZERO:
 			knockback_dir = last_direction
-		body.take_damage(attack_damage, knockback_dir)
+		body.take_damage(get_total_attack_damage(), knockback_dir, self)
 
-## Recebe dano, aplica empurrão, toca som, treme a câmera e abre Game Over se a vida zerar
-func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO) -> void:
+func get_total_armor() -> int:
+	return armor + UpgradeManager.get_bonus_armor()
+
+func get_total_attack_damage() -> int:
+	return attack_damage + UpgradeManager.get_bonus_damage()
+
+func _on_upgrades_changed() -> void:
+	var old_max := max_health
+	max_health = 100 + UpgradeManager.get_bonus_health()
+	var diff := max_health - old_max
+	if diff > 0:
+		current_health = mini(max_health, current_health + diff)
+		health_changed.emit(current_health, max_health)
+	armor_changed.emit(get_total_armor())
+
+## Recebe dano com redução de armadura, aplica empurrão, toca som, treme a câmera e abre Game Over se a vida zerar
+func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker = null) -> void:
 	if is_invulnerable or current_health <= 0:
 		return
 
-	current_health = max(0, current_health - amount)
+	var final_damage := maxi(1, amount - get_total_armor())
+	current_health = max(0, current_health - final_damage)
 	health_changed.emit(current_health, max_health)
 
 	# Efeitos visuais e sonoros de impacto

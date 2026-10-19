@@ -16,6 +16,8 @@ var _bob_tween: Tween
 func _ready() -> void:
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
+	if item_type == "coin":
+		add_to_group("coins")
 	_update_appearance()
 	_start_bobbing()
 

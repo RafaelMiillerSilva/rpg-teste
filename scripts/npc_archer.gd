@@ -1,105 +1,47 @@
 extends CharacterBody2D
 
-## Nome de exibição do arqueiro aliado no diálogo.
-@export var npc_name: String = "Mestre Arqueiro"
+## Recrutador Estático Permanente: Mestre do Campo de Tiro.
+## Permite recrutar continuamente novas unidades de ally_archer.tscn por 90 moedas.
 
-## Custo para contratar o arqueiro como aliado.
+@export var npc_name: String = "Mestre do Campo de Tiro"
 @export var hiring_cost: int = 90
+@export var spawn_offset: Vector2 = Vector2(0, 40)
 
-## Velocidade de caminhada ao seguir o jogador.
-@export var follow_speed: float = 205.0
-
-## Alcance máximo para detectar e atirar em monstros.
-@export var attack_range: float = 380.0
-
-## Velocidade da flecha aliada (alta velocidade).
-@export var arrow_speed: float = 550.0
-
-## Dano da flecha aliada.
-@export var arrow_damage: int = 15
-
-var is_hired: bool = false
-var is_shooting: bool = false
 var is_player_in_range: bool = false
-var target_player: CharacterBody2D = null
-
-const ARROW_SCENE: PackedScene = preload("res://scenes/arrow.tscn")
+const ALLY_SCENE: PackedScene = preload("res://scenes/ally_archer.tscn")
 
 @onready var interaction_area: Area2D = $InteractionArea
 @onready var interaction_label: Label = $InteractionLabel
+@export var health: int = 9999
+@export var max_health: int = 9999
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D if has_node("AnimatedSprite2D") else null
-@onready var shoot_timer: Timer = $ShootTimer if has_node("ShootTimer") else null
 
 func _ready() -> void:
 	add_to_group("npcs")
-	add_to_group("allies")
-	collision_layer = 4
-	collision_mask = 1
+	collision_layer = 0
+	collision_mask = 0
+	set_physics_process(false)
+	y_sort_enabled = true
+
+	if has_node("CollisionShape2D"):
+		get_node("CollisionShape2D").disabled = true
 
 	if animated_sprite:
 		animated_sprite.play("idle")
-		if not animated_sprite.animation_finished.is_connected(_on_animation_finished):
-			animated_sprite.animation_finished.connect(_on_animation_finished)
 
 	if interaction_label:
 		interaction_label.visible = false
 
 	if interaction_area:
+		interaction_area.collision_layer = 0
+		interaction_area.collision_mask = 1
 		interaction_area.body_entered.connect(_on_interaction_area_body_entered)
 		interaction_area.body_exited.connect(_on_interaction_area_body_exited)
 
-	if shoot_timer:
-		shoot_timer.wait_time = 0.7
-		shoot_timer.timeout.connect(_on_shoot_timer_timeout)
-
-func _physics_process(_delta: float) -> void:
-	if not is_hired:
-		return
-
-	if not is_instance_valid(target_player):
-		target_player = get_tree().get_first_node_in_group("player") as CharacterBody2D
-
-	# Se estiver executando a animação de tiro rápido, para para disparar
-	if is_shooting:
-		velocity = Vector2.ZERO
-		move_and_slide()
-		return
-
-	if is_instance_valid(target_player):
-		var distance: float = global_position.distance_to(target_player.global_position)
-
-		# Ponto de acompanhamento: quando o jogador anda, mira logo atrás dos passos do herói
-		var target_pos := target_player.global_position
-		if target_player.velocity.length() > 20.0:
-			target_pos -= target_player.velocity.normalized() * 60.0
-
-		var to_target := target_pos - global_position
-
-		if distance > 100.0:
-			var direction: Vector2 = to_target.normalized() if to_target.length() > 0.0 else (target_player.global_position - global_position).normalized()
-			velocity = direction * follow_speed
-			move_and_slide()
-			if animated_sprite:
-				animated_sprite.play("run")
-				if abs(direction.x) > 0.1:
-					animated_sprite.flip_h = direction.x < 0.0
-		elif distance < 50.0:
-			# Se o jogador se aproximar muito, recua suavemente para liberar espaço
-			var repulse_dir: Vector2 = (global_position - target_player.global_position).normalized()
-			if repulse_dir == Vector2.ZERO:
-				repulse_dir = Vector2.DOWN
-			velocity = repulse_dir * (follow_speed * 0.6)
-			move_and_slide()
-			if animated_sprite:
-				animated_sprite.play("run")
-				if abs(repulse_dir.x) > 0.1:
-					animated_sprite.flip_h = repulse_dir.x < 0.0
-		else:
-			velocity = Vector2.ZERO
-			move_and_slide()
-			if animated_sprite:
-				animated_sprite.play("idle")
-
+func take_damage(_amount: int = 0, _knockback: Vector2 = Vector2.ZERO, _attacker = null) -> void:
+	# Recrutador permanente não sofre dano nem empurrão
+	pass
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_player_in_range:
@@ -127,22 +69,15 @@ func trigger_dialogue() -> void:
 	if interaction_label:
 		interaction_label.visible = false
 
-	if not is_hired:
-		var lines: Array[String] = [
-			"Olá, Majestade! Sou um mestre arqueiro. Deseja me contratar por 90 moedas de ouro para cobrir suas costas com tiros rápidos? [E para Contratar / Afaste-se para Recusar]"
-		]
-		dialogue_box.start_dialogue(lines, npc_name)
+	var lines: Array[String] = [
+		"Saudações, Majestade! O Campo de Tiro treina arqueiros habilidosos para cobrir seu avanço com disparos rápidos. Deseja recrutar um Arqueiro por %d moedas de ouro? [Pressione E para Confirmar / Afaste-se para Cancelar]" % hiring_cost
+	]
+	dialogue_box.start_dialogue(lines, npc_name)
 
-		if not dialogue_box.dialogue_finished.is_connected(_on_hiring_dialogue_finished):
-			dialogue_box.dialogue_finished.connect(_on_hiring_dialogue_finished, CONNECT_ONE_SHOT)
-	else:
-		var lines: Array[String] = [
-			"Minhas flechas cobrirão seu avanço, Majestade! Nenhum monstro escapará da minha mira."
-		]
-		dialogue_box.start_dialogue(lines, npc_name)
+	if not dialogue_box.dialogue_finished.is_connected(_on_hiring_dialogue_finished):
+		dialogue_box.dialogue_finished.connect(_on_hiring_dialogue_finished, CONNECT_ONE_SHOT)
 
 func _on_hiring_dialogue_finished() -> void:
-	# Se o jogador se afastou da área do NPC, a contratação é cancelada
 	if not is_player_in_range:
 		return
 
@@ -159,92 +94,35 @@ func _on_hiring_dialogue_finished() -> void:
 			if player.has_signal("coins_changed"):
 				player.coins_changed.emit(player.coins)
 
-		is_hired = true
-		target_player = player
-
-		if shoot_timer:
-			shoot_timer.start(0.7)
-
 		SoundManager.play_coin()
+		_spawn_ally()
 
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var confirm_lines: Array[String] = [
-				"Contrato firmado! Minhas flechas rápidas cobrirão suas costas em cada batalha."
+				"Contratação realizada! O mestre arqueiro juntou-se ao seu esquadrão com mira certeira."
 			]
 			dialogue_box.start_dialogue(confirm_lines, npc_name)
 	else:
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var fail_lines: Array[String] = [
-				"Você não possui as 90 moedas de ouro necessárias. Derrote mais monstros para juntar o ouro!"
+				"Você não possui as %d moedas necessárias. Derrote monstros para juntar mais ouro!" % hiring_cost
 			]
 			dialogue_box.start_dialogue(fail_lines, npc_name)
 
-## Cadência rápida de tiro: a cada 0.7 segundos dispara contra o inimigo mais próximo no raio de 380px
-func _on_shoot_timer_timeout() -> void:
-	if not is_hired:
+func _spawn_ally() -> void:
+	if not ALLY_SCENE:
 		return
+	var ally := ALLY_SCENE.instantiate() as CharacterBody2D
+	ally.global_position = global_position + spawn_offset
 
-	var target_enemy := _find_closest_enemy()
-	if not is_instance_valid(target_enemy):
-		return
-
-	_shoot_at_enemy(target_enemy)
-
-func _find_closest_enemy() -> Node2D:
-	var enemies := get_tree().get_nodes_in_group("enemies")
-	var closest: Node2D = null
-	var min_dist: float = attack_range
-
-	for enemy in enemies:
-		if not is_instance_valid(enemy) or not enemy.is_inside_tree():
-			continue
-		if "is_dead" in enemy and enemy.is_dead:
-			continue
-		var dist: float = global_position.distance_to(enemy.global_position)
-		if dist <= min_dist:
-			min_dist = dist
-			closest = enemy
-
-	return closest
-
-func _shoot_at_enemy(enemy_node: Node2D) -> void:
-	if not is_instance_valid(enemy_node):
-		return
-
-	is_shooting = true
-	velocity = Vector2.ZERO
-
-	var dir: Vector2 = (enemy_node.global_position - global_position).normalized()
-	if dir == Vector2.ZERO:
-		dir = Vector2.RIGHT
-
-	if animated_sprite:
-		animated_sprite.flip_h = dir.x < 0.0
-		animated_sprite.play("shoot")
-
-	if ARROW_SCENE:
-		var arrow := ARROW_SCENE.instantiate()
-		arrow.global_position = global_position + dir * 20.0
-		arrow.direction = dir
-		arrow.speed = arrow_speed
-		arrow.damage = arrow_damage
-		arrow.is_player_ally = true
-
-		var scene_root := get_tree().current_scene
-		if scene_root:
-			scene_root.add_child(arrow)
-		elif get_parent():
-			get_parent().add_child(arrow)
-
-	SoundManager.play_hit()
-
-func _on_animation_finished() -> void:
-	if animated_sprite and animated_sprite.animation == "shoot":
-		is_shooting = false
-		if is_hired and is_instance_valid(target_player) and global_position.distance_to(target_player.global_position) > 90.0:
-			animated_sprite.play("run")
-		else:
-			animated_sprite.play("idle")
+	var world_scene := get_tree().current_scene
+	var allies_container := world_scene.get_node_or_null("Allies") if world_scene else null
+	if allies_container:
+		allies_container.add_child(ally)
+	elif world_scene:
+		world_scene.add_child(ally)
+	elif get_parent():
+		get_parent().add_child(ally)
 
 func _on_interaction_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):

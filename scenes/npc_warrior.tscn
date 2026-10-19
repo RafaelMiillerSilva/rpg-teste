@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Idle.png" id="2_warrior_idle"]
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Run.png" id="3_warrior_run"]
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Attack1.png" id="4_warrior_attack"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Warrior/Warrior_Guard.png" id="5_warrior_guard"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
 atlas = ExtResource("2_warrior_idle")
@@ -77,6 +78,30 @@ region = Rect2(384, 0, 192, 192)
 atlas = ExtResource("4_warrior_attack")
 region = Rect2(576, 0, 192, 192)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_guard_0"]
+atlas = ExtResource("5_warrior_guard")
+region = Rect2(0, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_guard_1"]
+atlas = ExtResource("5_warrior_guard")
+region = Rect2(192, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_guard_2"]
+atlas = ExtResource("5_warrior_guard")
+region = Rect2(384, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_guard_3"]
+atlas = ExtResource("5_warrior_guard")
+region = Rect2(576, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_guard_4"]
+atlas = ExtResource("5_warrior_guard")
+region = Rect2(768, 0, 192, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_guard_5"]
+atlas = ExtResource("5_warrior_guard")
+region = Rect2(960, 0, 192, 192)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_blue_warrior"]
 animations = [{
 "frames": [{
@@ -147,6 +172,29 @@ animations = [{
 "loop": false,
 "name": &"attack",
 "speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guard_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guard_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guard_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guard_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guard_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_guard_5")
+}],
+"loop": true,
+"name": &"guard",
+"speed": 10.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_warrior"]
@@ -155,11 +203,11 @@ size = Vector2(32, 32)
 [sub_resource type="CircleShape2D" id="CircleShape2D_interaction"]
 radius = 65.0
 
-[node name="NPCWarrior" type="CharacterBody2D" groups=["allies", "npcs"]]
+[node name="NPCWarrior" type="CharacterBody2D" groups=["npcs"]]
 y_sort_enabled = true
 texture_filter = 1
-collision_layer = 4
-collision_mask = 1
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_npc_warrior_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -171,9 +219,12 @@ autoplay = "idle"
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 25)
 shape = SubResource("RectangleShape2D_warrior")
+disabled = true
 
 [node name="InteractionArea" type="Area2D" parent="."]
 position = Vector2(0, 20)
+collision_layer = 0
+collision_mask = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
 shape = SubResource("CircleShape2D_interaction")

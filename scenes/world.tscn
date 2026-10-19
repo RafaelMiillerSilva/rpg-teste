@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dvg8e8rhqv105"]
+﻿[gd_scene format=3 uid="uid://dvg8e8rhqv105"]
 
 [ext_resource type="Script" uid="uid://ukip7l020mh4" path="res://scripts/world.gd" id="1_world_script"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -35,6 +35,7 @@
 [ext_resource type="PackedScene" path="res://scenes/pawn_gold.tscn" id="35_pawn_gold"]
 [ext_resource type="PackedScene" path="res://scenes/npc_citizen_pawn.tscn" id="36_npc_citizen_pawn"]
 [ext_resource type="PackedScene" path="res://scenes/npc_pawn.tscn" id="37_npc_pawn"]
+[ext_resource type="PackedScene" path="res://scenes/bush.tscn" id="38_bush_scene"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grass"]
 texture = ExtResource("8_tilemap_tex")
@@ -5265,229 +5266,110 @@ tree_type = 2
 [node name="Decorations" type="Node2D" parent="." unique_id=1388377074]
 y_sort_enabled = true
 
-[node name="Bush_1" type="Sprite2D" parent="Decorations" unique_id=1272106701]
-texture_filter = 1
+[node name="Bush_1" parent="Decorations" unique_id=1272106701 instance=ExtResource("38_bush_scene")]
 position = Vector2(3600, 2500)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_2" type="Sprite2D" parent="Decorations" unique_id=1532259992]
-texture_filter = 1
+[node name="Bush_2" parent="Decorations" unique_id=1532259992 instance=ExtResource("38_bush_scene")]
 position = Vector2(3300, 2650)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_3" type="Sprite2D" parent="Decorations" unique_id=2110609519]
-texture_filter = 1
+[node name="Bush_3" parent="Decorations" unique_id=2110609519 instance=ExtResource("38_bush_scene")]
 position = Vector2(3550, 2700)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_4" type="Sprite2D" parent="Decorations" unique_id=848205996]
-texture_filter = 1
+[node name="Bush_4" parent="Decorations" unique_id=848205996 instance=ExtResource("38_bush_scene")]
 position = Vector2(4450, 2520)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
-[node name="Bush_5" type="Sprite2D" parent="Decorations" unique_id=191513200]
-texture_filter = 1
+[node name="Bush_5" parent="Decorations" unique_id=191513200 instance=ExtResource("38_bush_scene")]
 position = Vector2(4700, 2650)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_6" type="Sprite2D" parent="Decorations" unique_id=2007572634]
-texture_filter = 1
+[node name="Bush_6" parent="Decorations" unique_id=2007572634 instance=ExtResource("38_bush_scene")]
 position = Vector2(4550, 3100)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_7" type="Sprite2D" parent="Decorations" unique_id=214355486]
-texture_filter = 1
+[node name="Bush_7" parent="Decorations" unique_id=214355486 instance=ExtResource("38_bush_scene")]
 position = Vector2(4780, 3220)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_8" type="Sprite2D" parent="Decorations" unique_id=982535093]
-texture_filter = 1
+[node name="Bush_8" parent="Decorations" unique_id=982535093 instance=ExtResource("38_bush_scene")]
 position = Vector2(3280, 2420)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
-[node name="Bush_9" type="Sprite2D" parent="Decorations" unique_id=1925670039]
-texture_filter = 1
+[node name="Bush_9" parent="Decorations" unique_id=1925670039 instance=ExtResource("38_bush_scene")]
 position = Vector2(4950, 2420)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_10" type="Sprite2D" parent="Decorations" unique_id=134808486]
-texture_filter = 1
+[node name="Bush_10" parent="Decorations" unique_id=134808486 instance=ExtResource("38_bush_scene")]
 position = Vector2(3520, 3180)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_11" type="Sprite2D" parent="Decorations" unique_id=1383610412]
-texture_filter = 1
+[node name="Bush_11" parent="Decorations" unique_id=1383610412 instance=ExtResource("38_bush_scene")]
 position = Vector2(3820, 3400)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_12" type="Sprite2D" parent="Decorations" unique_id=1310195135]
-texture_filter = 1
+[node name="Bush_12" parent="Decorations" unique_id=1310195135 instance=ExtResource("38_bush_scene")]
 position = Vector2(4180, 3400)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
-[node name="Bush_13" type="Sprite2D" parent="Decorations" unique_id=2051767251]
-texture_filter = 1
+[node name="Bush_13" parent="Decorations" unique_id=2051767251 instance=ExtResource("38_bush_scene")]
 position = Vector2(3900, 3720)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_14" type="Sprite2D" parent="Decorations" unique_id=1931353950]
-texture_filter = 1
+[node name="Bush_14" parent="Decorations" unique_id=1931353950 instance=ExtResource("38_bush_scene")]
 position = Vector2(4100, 3720)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_15" type="Sprite2D" parent="Decorations" unique_id=201065674]
-texture_filter = 1
+[node name="Bush_15" parent="Decorations" unique_id=201065674 instance=ExtResource("38_bush_scene")]
 position = Vector2(3180, 3550)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_16" type="Sprite2D" parent="Decorations" unique_id=1462721896]
-texture_filter = 1
+[node name="Bush_16" parent="Decorations" unique_id=1462721896 instance=ExtResource("38_bush_scene")]
 position = Vector2(4820, 3550)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
-[node name="Bush_17" type="Sprite2D" parent="Decorations" unique_id=1644974370]
-texture_filter = 1
+[node name="Bush_17" parent="Decorations" unique_id=1644974370 instance=ExtResource("38_bush_scene")]
 position = Vector2(2200, 1800)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_18" type="Sprite2D" parent="Decorations" unique_id=621715139]
-texture_filter = 1
+[node name="Bush_18" parent="Decorations" unique_id=621715139 instance=ExtResource("38_bush_scene")]
 position = Vector2(2350, 1720)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_19" type="Sprite2D" parent="Decorations" unique_id=1307008600]
-texture_filter = 1
+[node name="Bush_19" parent="Decorations" unique_id=1307008600 instance=ExtResource("38_bush_scene")]
 position = Vector2(5800, 1750)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_20" type="Sprite2D" parent="Decorations" unique_id=1226445382]
-texture_filter = 1
+[node name="Bush_20" parent="Decorations" unique_id=1226445382 instance=ExtResource("38_bush_scene")]
 position = Vector2(5950, 1820)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
-[node name="Bush_21" type="Sprite2D" parent="Decorations" unique_id=1539308711]
-texture_filter = 1
+[node name="Bush_21" parent="Decorations" unique_id=1539308711 instance=ExtResource("38_bush_scene")]
 position = Vector2(2100, 4300)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_22" type="Sprite2D" parent="Decorations" unique_id=1029676794]
-texture_filter = 1
+[node name="Bush_22" parent="Decorations" unique_id=1029676794 instance=ExtResource("38_bush_scene")]
 position = Vector2(2280, 4420)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_23" type="Sprite2D" parent="Decorations" unique_id=2116900310]
-texture_filter = 1
+[node name="Bush_23" parent="Decorations" unique_id=2116900310 instance=ExtResource("38_bush_scene")]
 position = Vector2(5800, 4350)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_24" type="Sprite2D" parent="Decorations" unique_id=883145974]
-texture_filter = 1
+[node name="Bush_24" parent="Decorations" unique_id=883145974 instance=ExtResource("38_bush_scene")]
 position = Vector2(6020, 4450)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
-[node name="Bush_25" type="Sprite2D" parent="Decorations" unique_id=175702428]
-texture_filter = 1
+[node name="Bush_25" parent="Decorations" unique_id=175702428 instance=ExtResource("38_bush_scene")]
 position = Vector2(2900, 2920)
-texture = ExtResource("20_bushe1_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
 
-[node name="Bush_26" type="Sprite2D" parent="Decorations" unique_id=1637750074]
-texture_filter = 1
+[node name="Bush_26" parent="Decorations" unique_id=1637750074 instance=ExtResource("38_bush_scene")]
 position = Vector2(3050, 3120)
-texture = ExtResource("21_bushe2_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 2
 
-[node name="Bush_27" type="Sprite2D" parent="Decorations" unique_id=1051001210]
-texture_filter = 1
+[node name="Bush_27" parent="Decorations" unique_id=1051001210 instance=ExtResource("38_bush_scene")]
 position = Vector2(5050, 2920)
-texture = ExtResource("22_bushe3_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 3
 
-[node name="Bush_28" type="Sprite2D" parent="Decorations" unique_id=220186217]
-texture_filter = 1
+[node name="Bush_28" parent="Decorations" unique_id=220186217 instance=ExtResource("38_bush_scene")]
 position = Vector2(5200, 3120)
-texture = ExtResource("23_bushe4_tex")
-offset = Vector2(0, -32)
-region_enabled = true
-region_rect = Rect2(0, 0, 128, 128)
+bush_type = 4
 
 [node name="Rock_1" type="StaticBody2D" parent="Decorations" unique_id=467425300]
 y_sort_enabled = true

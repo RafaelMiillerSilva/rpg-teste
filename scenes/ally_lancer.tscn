@@ -4,6 +4,10 @@
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_Idle.png" id="2_lancer_idle"]
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_Run.png" id="3_lancer_run"]
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_Right_Attack.png" id="4_lancer_attack"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_Down_Attack.png" id="5_lancer_down_attack"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_DownRight_Attack.png" id="6_lancer_down_right_attack"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_Up_Attack.png" id="7_lancer_up_attack"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/Blue Units/Lancer/Lancer_UpRight_Attack.png" id="8_lancer_up_right_attack"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
 atlas = ExtResource("2_lancer_idle")
@@ -89,6 +93,54 @@ region = Rect2(320, 0, 320, 320)
 atlas = ExtResource("4_lancer_attack")
 region = Rect2(640, 0, 320, 320)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_down_0"]
+atlas = ExtResource("5_lancer_down_attack")
+region = Rect2(0, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_down_1"]
+atlas = ExtResource("5_lancer_down_attack")
+region = Rect2(320, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_down_2"]
+atlas = ExtResource("5_lancer_down_attack")
+region = Rect2(640, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_down_right_0"]
+atlas = ExtResource("6_lancer_down_right_attack")
+region = Rect2(0, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_down_right_1"]
+atlas = ExtResource("6_lancer_down_right_attack")
+region = Rect2(320, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_down_right_2"]
+atlas = ExtResource("6_lancer_down_right_attack")
+region = Rect2(640, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_up_0"]
+atlas = ExtResource("7_lancer_up_attack")
+region = Rect2(0, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_up_1"]
+atlas = ExtResource("7_lancer_up_attack")
+region = Rect2(320, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_up_2"]
+atlas = ExtResource("7_lancer_up_attack")
+region = Rect2(640, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_up_right_0"]
+atlas = ExtResource("8_lancer_up_right_attack")
+region = Rect2(0, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_up_right_1"]
+atlas = ExtResource("8_lancer_up_right_attack")
+region = Rect2(320, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_attack_up_right_2"]
+atlas = ExtResource("8_lancer_up_right_attack")
+region = Rect2(640, 0, 320, 320)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_lancer"]
 animations = [{
 "frames": [{
@@ -167,6 +219,76 @@ animations = [{
 }],
 "loop": false,
 "name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_2")
+}],
+"loop": false,
+"name": &"attack_right",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_down_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_down_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_down_2")
+}],
+"loop": false,
+"name": &"attack_down",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_down_right_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_down_right_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_down_right_2")
+}],
+"loop": false,
+"name": &"attack_down_right",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_up_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_up_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_up_2")
+}],
+"loop": false,
+"name": &"attack_up",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_up_right_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_up_right_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_attack_up_right_2")
+}],
+"loop": false,
+"name": &"attack_up_right",
 "speed": 10.0
 }]
 

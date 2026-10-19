@@ -7,8 +7,9 @@ extends GoblinBase
 ## com cooldown de 3.0s, causando alto dano em área.
 
 const GOBLIN_DART_SCENE: PackedScene = preload("res://scenes/enemies/goblin_dart.tscn")
-const SMASH_RANGE: float = 114.0
-const SMASH_AREA_RADIUS: float = 144.0
+const DUST_SCENE: PackedScene = preload("res://scenes/dust_effect.tscn")
+const SMASH_RANGE: float = 125.0
+const SMASH_AREA_RADIUS: float = 160.0
 const SMASH_COOLDOWN: float = 3.0
 const DART_COOLDOWN: float = 1.2
 
@@ -18,10 +19,11 @@ var _step_shake_timer: float = 0.35
 
 func _init() -> void:
 	base_max_health = 400
-	base_damage = 35
+	base_damage = 39
 	base_speed = 87.5
 	base_armor = 4
 	goblin_type_name = "giant"
+
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -86,7 +88,7 @@ func _shoot_back_mounted_darts(target: Node2D) -> void:
 		var spread_angle := randf_range(-0.15, 0.15)
 		var base_dir: Vector2 = (target.global_position - dart.global_position).normalized()
 		dart.direction = base_dir.rotated(spread_angle)
-		dart.damage = 9
+		dart.damage = 10
 		dart.speed = 360.0 # Dardo rápido
 		dart.shooter = self
 		get_parent().call_deferred("add_child", dart)
@@ -130,7 +132,10 @@ func _execute_smash_impact() -> void:
 	_apply_screen_shake(7.0, 0.35)
 	SoundManager.play_hit()
 
-	# Aplica dano alto em área circular de 120px a todos os heróis
+	# Spawna nuvens de poeira (dust) ao redor do impacto
+	_spawn_smash_dust_ring()
+
+	# Aplica dano alto em área circular a todos os heróis e aplica Stun por 1s
 	var victims: Array[Node2D] = []
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if is_instance_valid(player) and not ("is_dead" in player and player.is_dead):
@@ -147,6 +152,27 @@ func _execute_smash_impact() -> void:
 		var knock_dir := (victim.global_position - global_position).normalized()
 		if victim.has_method("take_damage"):
 			victim.take_damage(damage, knock_dir * 1.6, self)
+		if victim.has_method("apply_stun"):
+			victim.apply_stun(1.0)
+
+func _spawn_smash_dust_ring() -> void:
+	if not is_inside_tree() or not DUST_SCENE:
+		return
+	var parent_node := get_parent()
+	if not parent_node:
+		return
+
+	var facing_sign := -1.0 if (animated_sprite and animated_sprite.flip_h) else 1.0
+	var impact_center := global_position + Vector2(facing_sign * 35.0, 30.0)
+	var count := 8
+	for i in range(count):
+		var angle := (float(i) / float(count)) * TAU + randf_range(-0.2, 0.2)
+		var dist := randf_range(40.0, 80.0)
+		var dust := DUST_SCENE.instantiate() as Node2D
+		dust.global_position = impact_center + Vector2(cos(angle), sin(angle)) * dist
+		dust.scale = Vector2.ONE * randf_range(0.9, 1.3)
+		parent_node.call_deferred("add_child", dust)
+
 
 func _apply_step_shake() -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
@@ -169,3 +195,8 @@ func _apply_screen_shake(intensity: float, duration: float) -> void:
 	var shake_offset := Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity))
 	tween.tween_property(camera, "offset", shake_offset, duration * 0.5)
 	tween.tween_property(camera, "offset", Vector2.ZERO, duration * 0.5)
+
+func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, attacker: Node = null) -> void:
+	# O Gigante colossal possui massa pesada e estabilidade maciça: quase imune a empurrões de golpes normais
+	super.take_damage(amount, knockback_dir * 0.1, attacker)
+

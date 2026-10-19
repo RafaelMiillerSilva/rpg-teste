@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
+const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 
 ## Unidade Móvel Aliada: Arqueiro de Suporte Rápido.
 ## Dispara flechas precisas à distância e forma círculo defensivo com o esquadrão.
@@ -10,6 +11,7 @@ const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
 @export var base_damage: int = 15
 @export var base_speed: float = 205.0
 @export var attack_range: float = 380.0
+@export var min_safe_dist: float = 200.0
 @export var arrow_speed: float = 550.0
 
 var max_health: int = 220
@@ -19,6 +21,9 @@ var armor: int = 1
 var is_dead: bool = false
 var is_shooting: bool = false
 var can_shoot: bool = true
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_effect_instance: Node2D = null
 var target_enemy: Node2D = null
 
 const ARROW_SCENE: PackedScene = preload("res://scenes/arrow.tscn")
@@ -109,6 +114,16 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
+	if is_stunned:
+		_stun_timer -= delta
+		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
+		move_and_slide()
+		if animated_sprite and animated_sprite.animation != "idle":
+			animated_sprite.play("idle")
+		if _stun_timer <= 0.0:
+			is_stunned = false
+		return
+
 	if is_shooting:
 		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
 		move_and_slide()
@@ -136,8 +151,26 @@ func _physics_process(delta: float) -> void:
 		var dist: float = global_position.distance_to(target_enemy.global_position)
 		var dir: Vector2 = (target_enemy.global_position - global_position).normalized()
 
-		if dist <= attack_range:
-			# Alcance seguro de disparo à distância
+		if dist < min_safe_dist:
+			# Muito perto do inimigo: afasta-se na direção oposta (kiting), mantendo a mira
+			var retreat_dir := -dir
+			if is_instance_valid(king) and dist_to_king > 180.0:
+				# Se o Rei estiver se distanciando, recua em direção ao Rei
+				retreat_dir = (retreat_dir * 0.5 + (king.global_position - global_position).normalized() * 0.5).normalized()
+
+			velocity = velocity.move_toward(retreat_dir * base_speed, 650.0 * delta)
+			move_and_slide()
+			if animated_sprite:
+				if animated_sprite.animation != "run":
+					animated_sprite.play("run")
+				animated_sprite.speed_scale = 1.0
+				if abs(dir.x) > 0.05:
+					animated_sprite.flip_h = dir.x < 0.0
+
+			if can_shoot:
+				_shoot_at_enemy(target_enemy)
+		elif dist <= attack_range:
+			# Alcance seguro de disparo à distância: para e atira
 			velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
 			move_and_slide()
 			if abs(dir.x) > 0.05 and animated_sprite:
@@ -148,13 +181,15 @@ func _physics_process(delta: float) -> void:
 			else:
 				if animated_sprite and animated_sprite.animation != "idle":
 					animated_sprite.play("idle")
+					animated_sprite.speed_scale = 1.0
 		else:
-			# Aproxima-se até o alcance máximo de arco
+			# Fora de alcance: aproxima-se até o alcance máximo de tiro
 			velocity = velocity.move_toward(dir * base_speed, 600.0 * delta)
 			move_and_slide()
 			if animated_sprite:
 				if animated_sprite.animation != "run":
 					animated_sprite.play("run")
+				animated_sprite.speed_scale = 1.0
 				if abs(dir.x) > 0.05:
 					animated_sprite.flip_h = dir.x < 0.0
 	elif is_instance_valid(king):
@@ -164,6 +199,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		if animated_sprite and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
+			animated_sprite.speed_scale = 1.0
 
 func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = false) -> void:
 	var allies := get_tree().get_nodes_in_group("allies_range")
@@ -194,6 +230,7 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 		if animated_sprite:
 			if animated_sprite.animation != "run":
 				animated_sprite.play("run")
+			animated_sprite.speed_scale = 1.0
 			if abs(dir.x) > 0.05:
 				animated_sprite.flip_h = dir.x < 0.0
 	else:
@@ -201,6 +238,7 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 		move_and_slide()
 		if animated_sprite and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
+			animated_sprite.speed_scale = 1.0
 
 func _shoot_at_enemy(enemy_node: Node2D) -> void:
 	if not is_instance_valid(enemy_node):
@@ -216,6 +254,9 @@ func _shoot_at_enemy(enemy_node: Node2D) -> void:
 
 	if animated_sprite:
 		animated_sprite.flip_h = dir.x < 0.0
+		var cd_mult: float = UpgradeManager.get_archer_cooldown_multiplier()
+		var anim_speed_scale: float = clampf(1.0 / maxf(0.1, cd_mult), 1.0, 3.0)
+		animated_sprite.speed_scale = anim_speed_scale
 		animated_sprite.play("shoot")
 
 	if ARROW_SCENE:
@@ -245,6 +286,7 @@ func _shoot_at_enemy(enemy_node: Node2D) -> void:
 func _on_animation_finished() -> void:
 	if animated_sprite and animated_sprite.animation == "shoot":
 		is_shooting = false
+		animated_sprite.speed_scale = 1.0
 		animated_sprite.play("idle")
 
 func _find_closest_enemy() -> Node2D:
@@ -285,6 +327,26 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker =
 	if current_health <= 0:
 		_die()
 
+## Aplica atordoamento (Stun) de 1.0s: bloqueia ações e exibe estrelas sobre a cabeça
+func apply_stun(duration: float = 1.0) -> void:
+	if is_dead:
+		return
+	is_stunned = true
+	_stun_timer = maxf(_stun_timer, duration)
+	is_shooting = false
+	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
+		animated_sprite.play("idle")
+
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.refresh_duration(_stun_timer)
+	elif STUN_EFFECT_SCENE and is_inside_tree():
+		_stun_effect_instance = STUN_EFFECT_SCENE.instantiate() as Node2D
+		_stun_effect_instance.setup(self, duration, Vector2(0, -48))
+		var parent_node := get_parent()
+		if parent_node:
+			parent_node.call_deferred("add_child", _stun_effect_instance)
+
 func heal(amount: int) -> void:
 	if is_dead:
 		return
@@ -306,6 +368,8 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.queue_free()
 	remove_from_group("allies")
 	set_physics_process(false)
 

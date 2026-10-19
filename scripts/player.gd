@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
+const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 
 signal health_changed(current: int, max_hp: int)
 signal coins_changed(new_amount: int)
@@ -45,6 +46,11 @@ var last_direction: Vector2 = Vector2.DOWN
 
 ## Flag para evitar sobreposição de ataques.
 var is_attacking: bool = false
+
+## Flag de atordoamento (Stun)
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_effect_instance: Node2D = null
 
 ## Tempo de invulnerabilidade breve para evitar dano por múltiplos frames.
 var is_invulnerable: bool = false
@@ -106,6 +112,18 @@ func _physics_process(delta: float) -> void:
 	elif Input.is_action_just_pressed("use_potion"):
 		use_potion()
 
+	# Se estiver atordoado, desacelera até parar e não aceita comandos de movimento ou ataque
+	if is_stunned:
+		_stun_timer -= delta
+		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		move_and_slide()
+		if animated_sprite and not is_attacking and animated_sprite.animation != "idle":
+			animated_sprite.play("idle")
+			_update_sprite_offset()
+		if _stun_timer <= 0.0:
+			is_stunned = false
+		return
+
 	# Se a movimentação estiver desabilitada, zera a velocidade e não processa entrada
 	if not can_move:
 		velocity = Vector2.ZERO
@@ -154,7 +172,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_Q:
 			use_potion()
 
-	if not can_move:
+	if not can_move or is_stunned:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var mouse_dir: Vector2 = (get_global_mouse_position() - global_position).normalized()
@@ -196,6 +214,28 @@ func freeze() -> void:
 ## Descongela movimentação e ações do jogador
 func unfreeze() -> void:
 	can_move = true
+
+## Aplica efeito de atordoamento (Stun): impede ações e exibe estrelas sobre a cabeça
+func apply_stun(duration: float = 1.0) -> void:
+	if current_health <= 0:
+		return
+	is_stunned = true
+	_stun_timer = maxf(_stun_timer, duration)
+	is_attacking = false
+	_deactivate_staff_hitbox()
+	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
+		animated_sprite.play("idle")
+		_update_sprite_offset()
+
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.refresh_duration(_stun_timer)
+	elif STUN_EFFECT_SCENE and is_inside_tree():
+		_stun_effect_instance = STUN_EFFECT_SCENE.instantiate() as Node2D
+		_stun_effect_instance.setup(self, duration, Vector2(0, -55))
+		var parent_node := get_parent()
+		if parent_node:
+			parent_node.call_deferred("add_child", _stun_effect_instance)
 
 ## Adiciona moedas ao inventário e emite atualização
 func add_coins(amount: int = 1) -> void:
@@ -293,7 +333,7 @@ func load_game() -> void:
 
 ## Executa o ataque mágico com o cajado do Rei Azul
 func attack() -> void:
-	if is_attacking or not can_move:
+	if is_attacking or not can_move or is_stunned:
 		return
 
 	is_attacking = true
@@ -303,6 +343,9 @@ func attack() -> void:
 	if animated_sprite:
 		if abs(last_direction.x) > 0.01:
 			animated_sprite.flip_h = last_direction.x < 0.0
+		var cd_mult: float = UpgradeManager.get_attack_cooldown_multiplier()
+		var anim_speed_scale: float = clampf(1.0 / maxf(0.1, cd_mult), 1.0, 3.0)
+		animated_sprite.speed_scale = anim_speed_scale
 		animated_sprite.play("attack")
 		_update_sprite_offset()
 
@@ -340,6 +383,7 @@ func _on_animation_finished() -> void:
 	if animated_sprite and animated_sprite.animation == "attack":
 		_deactivate_staff_hitbox()
 		is_attacking = false
+		animated_sprite.speed_scale = 1.0
 		_current_attack_hit_bodies.clear()
 		if can_move and velocity.length() > 20.0:
 			animated_sprite.play("walk")

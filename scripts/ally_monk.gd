@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
+const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 
 ## Unidade Móvel Aliada: Monge Curandeiro.
 ## Prioriza a cura da unidade mais ferida (menor porcentagem de vida) no raio de 350px a cada 5s.
@@ -17,6 +18,9 @@ var armor: int = 1
 
 var is_dead: bool = false
 var is_healing: bool = false
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_effect_instance: Node2D = null
 var heal_cooldown_timer: float = 0.0
 const HEAL_INTERVAL: float = 5.0
 
@@ -108,6 +112,16 @@ func get_total_heal_targets() -> int:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		return
+
+	if is_stunned:
+		_stun_timer -= delta
+		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
+		move_and_slide()
+		if animated_sprite and animated_sprite.animation != "idle":
+			animated_sprite.play("idle")
+		if _stun_timer <= 0.0:
+			is_stunned = false
 		return
 
 	# Temporizador de cura prioritária (a cada 5 segundos)
@@ -336,6 +350,26 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker =
 	if current_health <= 0:
 		_die()
 
+## Aplica atordoamento (Stun) de 1.0s: bloqueia ações e exibe estrelas sobre a cabeça
+func apply_stun(duration: float = 1.0) -> void:
+	if is_dead:
+		return
+	is_stunned = true
+	_stun_timer = maxf(_stun_timer, duration)
+	is_healing = false
+	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
+		animated_sprite.play("idle")
+
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.refresh_duration(_stun_timer)
+	elif STUN_EFFECT_SCENE and is_inside_tree():
+		_stun_effect_instance = STUN_EFFECT_SCENE.instantiate() as Node2D
+		_stun_effect_instance.setup(self, duration, Vector2(0, -48))
+		var parent_node := get_parent()
+		if parent_node:
+			parent_node.call_deferred("add_child", _stun_effect_instance)
+
 func heal(amount: int) -> void:
 	if is_dead:
 		return
@@ -357,6 +391,8 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.queue_free()
 	remove_from_group("allies")
 	remove_from_group("allies_range")
 	set_physics_process(false)

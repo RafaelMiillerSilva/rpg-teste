@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/bush.gd" id="1_bush_script"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Terrain/Decorations/Bushes/Bushe1.png" id="2_bush_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_base"]
+radius = 12.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_foliage"]
+radius = 24.0
+
+[node name="Bush" type="StaticBody2D" groups=["bushes"]]
+y_sort_enabled = true
+texture_filter = 1
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_bush_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_bush_tex")
+offset = Vector2(0, -14)
+region_enabled = true
+region_rect = Rect2(0, 0, 128, 128)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape2D_base")
+
+[node name="FoliageArea" type="Area2D" parent="."]
+position = Vector2(0, -20)
+collision_layer = 0
+collision_mask = 5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FoliageArea"]
+shape = SubResource("CircleShape2D_foliage")

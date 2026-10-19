@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
+const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 
 ## Unidade Móvel Aliada: Lanceiro Real de Elite.
 ## Possui alta armadura e ataque perfurante de longo alcance.
@@ -19,6 +20,9 @@ var armor: int = 3
 var is_dead: bool = false
 var is_attacking: bool = false
 var can_attack: bool = true
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_effect_instance: Node2D = null
 var target_enemy: Node2D = null
 var last_attack_dir: Vector2 = Vector2.RIGHT
 var hit_enemies: Array[Node2D] = []
@@ -116,8 +120,35 @@ func get_total_damage() -> int:
 func get_attack_cooldown() -> float:
 	return 1.0 * UpgradeManager.get_attack_cooldown_multiplier()
 
+## Calcula o alcance efetivo de ataque considerando o tamanho físico de alvos grandes (ex: Giant)
+func get_effective_attack_range(target: Node2D) -> float:
+	var base_r := attack_range
+	if not is_instance_valid(target):
+		return base_r
+	if target.get("goblin_type_name") == "giant" or target.name.to_lower().contains("giant"):
+		return 135.0
+	var col := target.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col and col.shape:
+		if col.shape is RectangleShape2D:
+			var sz: Vector2 = (col.shape as RectangleShape2D).size
+			var half_dim: float = maxf(sz.x, sz.y) * 0.5
+			return maxf(base_r, half_dim + 50.0)
+		elif col.shape is CircleShape2D:
+			return maxf(base_r, (col.shape as CircleShape2D).radius + 50.0)
+	return base_r
+
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		return
+
+	if is_stunned:
+		_stun_timer -= delta
+		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
+		move_and_slide()
+		if animated_sprite and animated_sprite.animation != "idle":
+			animated_sprite.play("idle")
+		if _stun_timer <= 0.0:
+			is_stunned = false
 		return
 
 	if is_attacking:
@@ -137,7 +168,7 @@ func _physics_process(delta: float) -> void:
 		# Se estiver próximo da formação e um monstro colado, contra-ataca no local sem sair da formação
 		if can_attack and not is_attacking and not king_too_far:
 			target_enemy = _find_closest_enemy()
-			if is_instance_valid(target_enemy) and global_position.distance_to(target_enemy.global_position) <= attack_range:
+			if is_instance_valid(target_enemy) and global_position.distance_to(target_enemy.global_position) <= get_effective_attack_range(target_enemy):
 				_attack_enemy(target_enemy)
 		return
 
@@ -146,8 +177,9 @@ func _physics_process(delta: float) -> void:
 	if is_instance_valid(target_enemy):
 		var dist: float = global_position.distance_to(target_enemy.global_position)
 		var dir: Vector2 = (target_enemy.global_position - global_position).normalized()
+		var eff_range: float = get_effective_attack_range(target_enemy)
 
-		if dist <= attack_range:
+		if dist <= eff_range:
 			velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
 			move_and_slide()
 			if abs(dir.x) > 0.05 and animated_sprite:
@@ -221,9 +253,48 @@ func _attack_enemy(enemy: Node2D) -> void:
 	if last_attack_dir == Vector2.ZERO:
 		last_attack_dir = Vector2.RIGHT
 
+	# Seleciona o sprite de ataque correspondente ao ângulo do golpe
+	var angle_deg: float = rad_to_deg(last_attack_dir.angle())
+	var sector: int = int(fposmod(angle_deg + 22.5, 360.0) / 45.0)
+
+	var attack_anim: String = "attack_right"
+	var flip: bool = false
+
+	match sector:
+		0: # Direita (0°)
+			attack_anim = "attack_right"
+			flip = false
+		1: # Baixo-Direita (45°)
+			attack_anim = "attack_down_right"
+			flip = false
+		2: # Baixo (90°)
+			attack_anim = "attack_down"
+			flip = false
+		3: # Baixo-Esquerda (135°)
+			attack_anim = "attack_down_right"
+			flip = true
+		4: # Esquerda (180°)
+			attack_anim = "attack_right"
+			flip = true
+		5: # Cima-Esquerda (225° / -135°)
+			attack_anim = "attack_up_right"
+			flip = true
+		6: # Cima (270° / -90°)
+			attack_anim = "attack_up"
+			flip = false
+		7: # Cima-Direita (315° / -45°)
+			attack_anim = "attack_up_right"
+			flip = false
+
 	if animated_sprite:
-		animated_sprite.flip_h = last_attack_dir.x < 0.0
-		animated_sprite.play("attack")
+		animated_sprite.flip_h = flip
+		var cd_mult: float = UpgradeManager.get_attack_cooldown_multiplier()
+		var anim_speed_scale: float = clampf(1.0 / maxf(0.1, cd_mult), 1.0, 3.0)
+		animated_sprite.speed_scale = anim_speed_scale
+		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation(attack_anim):
+			animated_sprite.play(attack_anim)
+		else:
+			animated_sprite.play("attack")
 
 	SoundManager.play_slash()
 
@@ -276,12 +347,13 @@ func _process_enemy_hit(target: Node2D) -> void:
 		enemy_node.take_damage(get_total_damage(), knock_dir, self)
 
 func _on_animation_finished() -> void:
-	if animated_sprite and animated_sprite.animation == "attack":
+	if animated_sprite and animated_sprite.animation.begins_with("attack"):
 		if spear_collision:
 			spear_collision.disabled = true
 		if spear_hitbox:
 			spear_hitbox.monitoring = false
 		is_attacking = false
+		animated_sprite.speed_scale = 1.0
 		animated_sprite.play("idle")
 
 func _find_closest_enemy() -> Node2D:
@@ -322,6 +394,30 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker =
 	if current_health <= 0:
 		_die()
 
+## Aplica atordoamento (Stun) de 1.0s: bloqueia ações e exibe estrelas sobre a cabeça
+func apply_stun(duration: float = 1.0) -> void:
+	if is_dead:
+		return
+	is_stunned = true
+	_stun_timer = maxf(_stun_timer, duration)
+	is_attacking = false
+	if spear_hitbox:
+		spear_hitbox.monitoring = false
+	if spear_collision:
+		spear_collision.disabled = true
+	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
+		animated_sprite.play("idle")
+
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.refresh_duration(_stun_timer)
+	elif STUN_EFFECT_SCENE and is_inside_tree():
+		_stun_effect_instance = STUN_EFFECT_SCENE.instantiate() as Node2D
+		_stun_effect_instance.setup(self, duration, Vector2(0, -50))
+		var parent_node := get_parent()
+		if parent_node:
+			parent_node.call_deferred("add_child", _stun_effect_instance)
+
 func heal(amount: int) -> void:
 	if is_dead:
 		return
@@ -343,6 +439,8 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.queue_free()
 	remove_from_group("allies")
 	set_physics_process(false)
 

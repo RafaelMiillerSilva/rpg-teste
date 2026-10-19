@@ -197,12 +197,14 @@ func _physics_process(delta: float) -> void:
 		var is_moving: bool = velocity.length() > 10.0
 		if is_moving:
 			animated_sprite.play("run")
+			animated_sprite.speed_scale = clampf(speed / maxf(1.0, base_speed), 0.5, 3.0)
 			if abs(desired_velocity.x) > 0.1:
 				animated_sprite.flip_h = desired_velocity.x < 0.0
 			elif abs(velocity.x) > 0.1:
 				animated_sprite.flip_h = velocity.x < 0.0
 		else:
 			animated_sprite.play("idle")
+			animated_sprite.speed_scale = 1.0
 			if is_instance_valid(target_player):
 				var dir_x: float = target_player.global_position.x - global_position.x
 				if abs(dir_x) > 0.1:

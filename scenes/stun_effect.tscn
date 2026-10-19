@@ -1,0 +1,76 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/stun_effect.gd" id="1_stun_script"]
+[ext_resource type="Texture2D" uid="uid://q500krstfn8h" path="res://assets/tiny_swords/Particle FX/stun.png" id="2_stun_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s0"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(0, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s1"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(45, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s2"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(90, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s3"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(135, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s4"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(180, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s5"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(225, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s6"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(270, 16, 45, 38)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s7"]
+atlas = ExtResource("2_stun_tex")
+region = Rect2(315, 16, 45, 38)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_stun"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s7")
+}],
+"loop": true,
+"name": &"stun",
+"speed": 8.0
+}]
+
+[node name="StunEffect" type="AnimatedSprite2D"]
+texture_filter = 1
+z_index = 25
+sprite_frames = SubResource("SpriteFrames_stun")
+animation = &"stun"
+autoplay = "stun"
+script = ExtResource("1_stun_script")

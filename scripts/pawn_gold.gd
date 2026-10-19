@@ -2,6 +2,7 @@ class_name PawnGold
 extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
+const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 
 ## Ajudante Móvel Autônomo: Peão Coletor de Ouro Real.
 ## É imortal (ignora danos e ataques). Rastreia moedas pelo mapa, recolhe até a capacidade da bolsa
@@ -18,6 +19,9 @@ enum State {
 var current_state: State = State.SEEKING_COINS
 var carried_coins: int = 0
 var target_coin: Node2D = null
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_effect_instance: Node2D = null
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D if has_node("AnimatedSprite2D") else null
 @onready var capacity_label: Label = $CapacityLabel if has_node("CapacityLabel") else null
@@ -59,7 +63,31 @@ func take_damage(_amount: int = 0, _knockback: Vector2 = Vector2.ZERO, _attacker
 	# O Peão Coletor é imortal e ignora qualquer dano
 	pass
 
+## Aplica atordoamento (Stun) de 1.0s: bloqueia ações e exibe estrelas sobre a cabeça
+func apply_stun(duration: float = 1.0) -> void:
+	is_stunned = true
+	_stun_timer = maxf(_stun_timer, duration)
+	_update_animation("idle", Vector2.ZERO)
+
+	if is_instance_valid(_stun_effect_instance):
+		_stun_effect_instance.refresh_duration(_stun_timer)
+	elif STUN_EFFECT_SCENE and is_inside_tree():
+		_stun_effect_instance = STUN_EFFECT_SCENE.instantiate() as Node2D
+		_stun_effect_instance.setup(self, duration, Vector2(0, -42))
+		var parent_node := get_parent()
+		if parent_node:
+			parent_node.call_deferred("add_child", _stun_effect_instance)
+
 func _physics_process(delta: float) -> void:
+	if is_stunned:
+		_stun_timer -= delta
+		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
+		move_and_slide()
+		_update_animation("idle", Vector2.ZERO)
+		if _stun_timer <= 0.0:
+			is_stunned = false
+		return
+
 	var king := get_tree().get_first_node_in_group("player") as CharacterBody2D
 	var move_speed: float = base_speed * UpgradeManager.get_pawn_speed_multiplier()
 	var max_cap: int = UpgradeManager.get_pawn_max_capacity()
@@ -137,6 +165,10 @@ func _update_animation(anim_name: String, dir: Vector2) -> void:
 		return
 	if animated_sprite.animation != anim_name:
 		animated_sprite.play(anim_name)
+	if anim_name == "run":
+		animated_sprite.speed_scale = UpgradeManager.get_pawn_speed_multiplier()
+	else:
+		animated_sprite.speed_scale = 1.0
 	if abs(dir.x) > 0.05:
 		animated_sprite.flip_h = dir.x < 0.0
 

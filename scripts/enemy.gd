@@ -192,12 +192,14 @@ func _physics_process(delta: float) -> void:
 		var is_moving: bool = velocity.length() > 10.0
 		if is_moving:
 			animated_sprite.play("walk")
+			animated_sprite.speed_scale = clampf(speed / maxf(1.0, base_speed), 0.5, 3.0)
 			if abs(desired_velocity.x) > 0.1:
 				animated_sprite.flip_h = desired_velocity.x < 0.0
 			elif abs(velocity.x) > 0.1:
 				animated_sprite.flip_h = velocity.x < 0.0
 		else:
 			animated_sprite.play("idle")
+			animated_sprite.speed_scale = 1.0
 
 	# Verifica se colidiu fisicamente com o jogador durante o deslocamento
 	_check_player_collisions()

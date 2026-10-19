@@ -133,6 +133,12 @@ func apply_smart_movement(target_dir: Vector2, delta: float, move_speed: float =
 	velocity = velocity.move_toward(desired_velocity, 650.0 * delta)
 	move_and_slide()
 
+	if animated_sprite and not is_attacking:
+		if velocity.length() > 10.0 and animated_sprite.animation == "run":
+			animated_sprite.speed_scale = clampf(move_speed / maxf(1.0, base_speed), 0.5, 3.0)
+		elif animated_sprite.animation != "run":
+			animated_sprite.speed_scale = 1.0
+
 	# Sistema anti-travamento: detecta bloqueio por obstáculos (árvores, construções, outros goblins)
 	if get_slide_collision_count() > 0 and not is_attacking:
 		if velocity.length() < 25.0 and desired_velocity.length() > 20.0:

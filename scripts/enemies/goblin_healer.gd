@@ -5,15 +5,18 @@ extends GoblinBase
 ## A cada 5 segundos, busca até 5 goblins feridos e cura 15 de vida em cada um.
 ## Prioridade de cura: Giant > Warrior > Range > Normal.
 
-const MIN_HERO_DISTANCE: float = 300.0
+const MIN_HERO_DISTANCE: float = 220.0
+const MAX_BATTLE_DISTANCE: float = 360.0
+const HEAL_RANGE: float = 220.0
 const HEAL_COOLDOWN: float = 5.0
 const HEAL_AMOUNT: int = 15
 
 var _heal_timer: float = 3.0 # Primeiro ciclo de cura após 3.0s
+var is_healing: bool = false
 
 func _init() -> void:
 	base_max_health = 40
-	base_speed = 95.0
+	base_speed = 76.0
 	base_damage = 5
 	goblin_type_name = "healer"
 
@@ -21,41 +24,59 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
+	# Não permite andar enquanto estiver executando a animação de cura
+	if is_healing:
+		velocity = Vector2.ZERO
+		return
+
+
 	update_avoidance_timer(delta)
+
 
 	_heal_timer -= delta
 
-	# 1. Manter distância de segurança de 300px de qualquer herói (Player ou Aliados)
+	# 1. Manter distância de segurança dos heróis (Player ou Aliados)
 	var hero_threat := _find_closest_hero()
 	if is_instance_valid(hero_threat):
 		var dist := global_position.distance_to(hero_threat.global_position)
 		var dir := (hero_threat.global_position - global_position).normalized()
 		var smart_dir := calculate_smart_direction(hero_threat.global_position)
 
-		if animated_sprite and abs(smart_dir.x) > 0.05:
-			animated_sprite.flip_h = smart_dir.x < 0.0
-
 		if dist < MIN_HERO_DISTANCE:
-			# Muito perto: foge na direção oposta!
+			# Muito perto: foge na direção oposta e olha para onde está correndo (sem andar de costas)
 			velocity = velocity.move_toward(-dir * speed, 500.0 * delta)
 			move_and_slide()
-			if animated_sprite and animated_sprite.animation != "run":
-				animated_sprite.play("run")
-		elif dist > 500.0:
+			if animated_sprite:
+				if animated_sprite.animation != "run":
+					animated_sprite.play("run")
+				animated_sprite.speed_scale = speed / base_speed
+				if abs(-dir.x) > 0.05:
+					animated_sprite.flip_h = -dir.x < 0.0
+		elif dist > MAX_BATTLE_DISTANCE:
 			# Muito longe da batalha: aproxima-se com cautela contornando obstáculos
 			apply_smart_movement(smart_dir, delta, speed * 0.7)
-			if animated_sprite and animated_sprite.animation != "run":
-				animated_sprite.play("run")
+			if animated_sprite:
+				if animated_sprite.animation != "run":
+					animated_sprite.play("run")
+				animated_sprite.speed_scale = speed / base_speed
+				if abs(smart_dir.x) > 0.05:
+					animated_sprite.flip_h = smart_dir.x < 0.0
 		else:
 			velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
 			move_and_slide()
-			if animated_sprite and animated_sprite.animation != "idle" and animated_sprite.animation != "heal":
-				animated_sprite.play("idle")
+			if animated_sprite:
+				animated_sprite.speed_scale = 1.0
+				if animated_sprite.animation != "idle" and animated_sprite.animation != "heal":
+					animated_sprite.play("idle")
+				if abs(dir.x) > 0.05:
+					animated_sprite.flip_h = dir.x < 0.0
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, 400.0 * delta)
 		move_and_slide()
+		if animated_sprite:
+			animated_sprite.speed_scale = 1.0
 
-	# 2. Ciclo de cura a cada 5 segundos
+	# 2. Ciclo de cura a cada 5 segundos para aliados no raio de alcance
 	if _heal_timer <= 0.0:
 		_heal_timer = HEAL_COOLDOWN
 		_perform_healing_wave()
@@ -87,8 +108,9 @@ func _perform_healing_wave() -> void:
 
 	for e in enemies:
 		if is_instance_valid(e) and e is GoblinBase and not e.is_dead:
-			if e.current_health < e.max_health:
-				injured.append(e)
+			if global_position.distance_to(e.global_position) <= HEAL_RANGE:
+				if e.current_health < e.max_health:
+					injured.append(e)
 
 	if injured.is_empty():
 		return
@@ -118,7 +140,10 @@ func _perform_healing_wave() -> void:
 	if targets_to_heal.is_empty():
 		return
 
+	is_healing = true
+	velocity = Vector2.ZERO
 	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
 		animated_sprite.play("heal")
 
 	SoundManager.play_heal()
@@ -127,6 +152,14 @@ func _perform_healing_wave() -> void:
 		if is_instance_valid(target) and not target.is_dead:
 			target.heal(HEAL_AMOUNT)
 			_spawn_heal_effect(target)
+
+func _on_animation_finished() -> void:
+	if animated_sprite and animated_sprite.animation == "heal":
+		is_healing = false
+		animated_sprite.play("idle")
+	else:
+		super._on_animation_finished()
+
 
 func _spawn_heal_effect(target: Node2D) -> void:
 	if not is_inside_tree() or not is_instance_valid(target):

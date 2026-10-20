@@ -20,6 +20,11 @@ config/icon="res://icon.svg"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[gui]
+
+theme/custom="res://assets/font/main_theme.tres"
+theme/custom_font="res://assets/font/AncientModernTales-a7Po.ttf"
+
 [input]
 
 move_left={

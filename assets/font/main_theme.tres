@@ -1,0 +1,19 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://df7theme001"]
+
+[ext_resource type="FontFile" uid="uid://oqrc8vsst1u" path="res://assets/font/AncientModernTales-a7Po.ttf" id="1_font"]
+
+[resource]
+default_font = ExtResource("1_font")
+default_font_size = 16
+Button/fonts/font = ExtResource("1_font")
+Label/fonts/font = ExtResource("1_font")
+LineEdit/fonts/font = ExtResource("1_font")
+PopupMenu/fonts/font = ExtResource("1_font")
+RichTextLabel/fonts/bold_font = ExtResource("1_font")
+RichTextLabel/fonts/bold_italics_font = ExtResource("1_font")
+RichTextLabel/fonts/italics_font = ExtResource("1_font")
+RichTextLabel/fonts/mono_font = ExtResource("1_font")
+RichTextLabel/fonts/normal_font = ExtResource("1_font")
+TabBar/fonts/font = ExtResource("1_font")
+TextEdit/fonts/font = ExtResource("1_font")
+TooltipLabel/fonts/font = ExtResource("1_font")

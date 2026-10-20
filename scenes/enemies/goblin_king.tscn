@@ -1,0 +1,213 @@
+[gd_scene load_steps=29 format=3]
+
+[ext_resource type="Script" path="res://scripts/goblin_king.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/monsters/goblin/King_goblin/goblinking_idle.png" id="2_idle_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/monsters/goblin/King_goblin/goblinking_walk_clean.png" id="3_walk_tex"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Units/monsters/goblin/King_goblin/goblinking_tornado_clean.png" id="4_tornado_tex"]
+[ext_resource type="AudioStream" path="res://assets/sounds/8_Atk_Magic_SFX/25_Wind_01.wav" id="5_wind_sfx"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(0, 0, 204, 204)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_1"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(204, 0, 204, 204)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_2"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(408, 0, 204, 204)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_3"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(0, 204, 204, 204)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_4"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(204, 204, 204, 204)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_5"]
+atlas = ExtResource("2_idle_tex")
+region = Rect2(408, 204, 204, 204)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_0"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(0, 0, 176, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_1"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(176, 0, 177, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_2"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(353, 0, 177, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_3"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(530, 0, 177, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_4"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(0, 176, 176, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_5"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(176, 176, 177, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_6"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(353, 176, 177, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_7"]
+atlas = ExtResource("3_walk_tex")
+region = Rect2(530, 176, 177, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_0"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(0, 0, 176, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_1"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(176, 0, 177, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_2"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(353, 0, 177, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_3"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(530, 0, 177, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_4"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(0, 176, 176, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_5"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(176, 176, 177, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_6"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(353, 176, 177, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tornado_7"]
+atlas = ExtResource("4_tornado_tex")
+region = Rect2(530, 176, 177, 177)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_king"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_5")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_7")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tornado_7")
+}],
+"loop": true,
+"name": &"tornado",
+"speed": 14.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_king"]
+size = Vector2(96, 110)
+
+[node name="GoblinKing" type="CharacterBody2D" groups=["enemies"]]
+y_sort_enabled = true
+texture_filter = 1
+collision_layer = 3
+collision_mask = 3
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(1.8, 1.8)
+sprite_frames = SubResource("SpriteFrames_king")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 20)
+shape = SubResource("RectangleShape2D_king")
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+visible = false
+offset_left = -48.0
+offset_top = -90.0
+offset_right = 48.0
+offset_bottom = -82.0
+show_percentage = false
+
+[node name="WindAudioPlayer" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_wind_sfx")
+volume_db = 3.0
+max_distance = 1800.0

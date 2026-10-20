@@ -1,14 +1,5 @@
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 
---- TESTE DE VALIDAÇÃO: GOBLIN GIANT, STUN E DUST ---
-✔ scenes/dust_effect.tscn e SpriteFrames validados com sucesso!
-✔ scenes/stun_effect.tscn e 8 frames de estrelas validados com sucesso!
-✔ Goblin Giant (+10% tamanho e +10% dano) validado com sucesso!
-✔ Player stun validado com sucesso!
-✔ Ally Warrior stun validado com sucesso!
-✔ Ally Lancer stun validado com sucesso!
-✔ Ally Archer stun validado com sucesso!
-✔ Ally Monk stun validado com sucesso!
-✔ Pawn Gold stun validado com sucesso!
-✔ scenes/world.tscn carregada perfeitamente com todas as alterações!
---- TODOS OS TESTES PASSARAM COM SUCESSO! ---
+Clean Walk: true
+Clean Tornado: true
+Idle: true

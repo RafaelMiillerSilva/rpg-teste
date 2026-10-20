@@ -1,4 +1,4 @@
-﻿[gd_scene format=3 uid="uid://dvg8e8rhqv105"]
+[gd_scene format=3 uid="uid://dvg8e8rhqv105"]
 
 [ext_resource type="Script" uid="uid://ukip7l020mh4" path="res://scripts/world.gd" id="1_world_script"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -158,6 +158,32 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_bg"]
+bg_color = Color(0.1, 0.07, 0.05, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.65, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_fill"]
+bg_color = Color(0.85, 0.12, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.4, 0.4, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="World" type="Node2D" unique_id=1022644634]
 y_sort_enabled = true
@@ -6089,15 +6115,81 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_hud_btn_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_hud_btn_hover")
 text = "⏸ Menu [ESC]"
 
+[node name="StopwatchLabel" type="Label" parent="CanvasLayer" unique_id=990112233]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 14.0
+offset_right = 100.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "⏱️ 00:00"
+horizontal_alignment = 1
+
+[node name="BossBarContainer" type="VBoxContainer" parent="CanvasLayer" unique_id=990112234]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 46.0
+offset_right = 220.0
+offset_bottom = 96.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+
+[node name="BossTitleLabel" type="Label" parent="CanvasLayer/BossBarContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_colors/font_outline_color = Color(0.2, 0.1, 0.03, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
+text = "👑 REI GOBLIN - CHEFE FINAL 👑"
+horizontal_alignment = 1
+
+[node name="BossProgressBar" type="ProgressBar" parent="CanvasLayer/BossBarContainer"]
+custom_minimum_size = Vector2(440, 20)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_boss_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_boss_fill")
+max_value = 1800.0
+value = 1800.0
+show_percentage = false
+
+[node name="BossHealthText" type="Label" parent="CanvasLayer/BossBarContainer/BossProgressBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 12
+text = "1800 / 1800"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="SaveNotificationLabel" type="Label" parent="CanvasLayer" unique_id=98824021]
 visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -100.0
-offset_top = 24.0
+offset_top = 105.0
 offset_right = 100.0
-offset_bottom = 54.0
+offset_bottom = 135.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)

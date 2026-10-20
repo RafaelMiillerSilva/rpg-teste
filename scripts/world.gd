@@ -3,6 +3,7 @@ extends Node2D
 static var auto_load_save_on_start: bool = false
 
 const WaveManager = preload("res://scripts/wave_manager.gd")
+const LevelManager = preload("res://scripts/level_manager.gd")
 
 ## Controle do sistema de turnos e hordas de inimigos via WaveManager
 var current_turn: int:
@@ -17,6 +18,10 @@ var enemies_alive: int:
 
 var wave_manager: Node = null
 
+## Cronômetro da partida
+var match_time: float = 0.0
+var is_match_active: bool = true
+
 @onready var player: CharacterBody2D = $Player
 @onready var enemies_container: Node2D = $Enemies
 @onready var tilemap_layer: TileMapLayer = $TileMapLayer if has_node("TileMapLayer") else null
@@ -29,6 +34,10 @@ var wave_manager: Node = null
 @onready var turn_label: Label = $CanvasLayer/TurnLabel
 @onready var enemies_count_label: Label = $CanvasLayer/EnemiesCountLabel
 @onready var turn_banner_label: Label = $CanvasLayer/TurnBannerLabel
+@onready var stopwatch_label: Label = $CanvasLayer.get_node_or_null("StopwatchLabel")
+@onready var boss_bar_container: Control = $CanvasLayer.get_node_or_null("BossBarContainer")
+@onready var boss_progress_bar: ProgressBar = $CanvasLayer.get_node_or_null("BossBarContainer/BossProgressBar")
+@onready var boss_health_text: Label = $CanvasLayer.get_node_or_null("BossBarContainer/BossProgressBar/BossHealthText")
 @onready var pause_button: Button = $CanvasLayer.get_node_or_null("PauseButton")
 @onready var pause_menu: CanvasLayer = $PauseMenu if has_node("PauseMenu") else null
 @onready var upgrade_menu: CanvasLayer = $UpgradeMenu if has_node("UpgradeMenu") else null
@@ -57,6 +66,8 @@ func _ready() -> void:
 	wave_manager.turn_started.connect(_on_wave_turn_started)
 	wave_manager.enemies_count_changed.connect(_on_wave_enemies_count_changed)
 	wave_manager.turn_completed.connect(_on_wave_turn_completed)
+	wave_manager.boss_spawned.connect(_on_boss_spawned)
+	wave_manager.level_victory_triggered.connect(_on_level_victory)
 
 	if pause_button and pause_menu:
 		pause_button.pressed.connect(func():
@@ -68,6 +79,10 @@ func _ready() -> void:
 		save_label.visible = false
 	if turn_banner_label:
 		turn_banner_label.visible = false
+	if boss_bar_container:
+		boss_bar_container.visible = false
+	if stopwatch_label:
+		stopwatch_label.text = "⏱️ 00:00"
 
 	if player:
 		if health_bar:
@@ -95,19 +110,70 @@ func _ready() -> void:
 		auto_load_save_on_start = false
 		call_deferred("_load_initial_save")
 
+func _process(delta: float) -> void:
+	# O cronômetro roda continuamente enquanto a partida estiver ativa,
+	# pausando automaticamente quando get_tree().paused = true (menus de pausa e upgrades)
+	if is_match_active:
+		match_time += delta
+		if stopwatch_label:
+			stopwatch_label.text = "⏱️ " + LevelManager.format_time(match_time)
+
 func _load_initial_save() -> void:
 	if player and player.has_method("load_game"):
 		player.load_game()
 
 func _on_wave_turn_started(turn: int, total_enemies: int) -> void:
 	_update_turn_hud()
-	_show_banner("TURNO %d\n%d Goblins Invasores!" % [turn, total_enemies], Color(1.0, 0.85, 0.2, 1.0))
+	if turn == 30 and LevelManager.current_game_mode == "story":
+		_show_banner("👑 TURNO 30 - O REI GOBLIN CHEGOU! 👑\nDerrote o Chefe Final para salvar o reino!", Color(1.0, 0.35, 0.35, 1.0))
+	else:
+		_show_banner("TURNO %d\n%d Goblins Invasores!" % [turn, total_enemies], Color(1.0, 0.85, 0.2, 1.0))
 
 func _on_wave_enemies_count_changed(_count: int) -> void:
 	_update_turn_hud()
 
 func _on_wave_turn_completed(_turn: int) -> void:
 	_regenerate_all_troops()
+
+func _on_boss_spawned(boss: Node2D) -> void:
+	if boss_bar_container:
+		boss_bar_container.visible = true
+		boss_bar_container.modulate.a = 0.0
+		var tween := create_tween()
+		tween.tween_property(boss_bar_container, "modulate:a", 1.0, 0.5)
+
+	if boss.has_signal("boss_health_changed"):
+		boss.boss_health_changed.connect(_on_boss_health_changed)
+	if "current_health" in boss and "max_health" in boss:
+		_on_boss_health_changed(boss.current_health, boss.max_health)
+
+func _on_boss_health_changed(current: int, max_hp: int) -> void:
+	if boss_progress_bar:
+		boss_progress_bar.max_value = max_hp
+		boss_progress_bar.value = maxi(0, current)
+	if boss_health_text:
+		boss_health_text.text = "%d / %d" % [maxi(0, current), max_hp]
+
+	if current <= 0 and boss_bar_container:
+		var tween := create_tween()
+		tween.tween_property(boss_bar_container, "modulate:a", 0.0, 0.6)
+		tween.tween_callback(func(): boss_bar_container.visible = false)
+
+func _on_level_victory() -> void:
+	if not is_match_active:
+		return
+	is_match_active = false
+
+	var coins: int = player.coins if is_instance_valid(player) else 0
+	LevelManager.record_level_1_victory(match_time, coins)
+
+	_show_banner("👑 VITÓRIA! O REI GOBLIN FOI DERROTADO! 👑", Color(1.0, 0.9, 0.3, 1.0))
+
+	# Aguarda 2 segundos para o jogador ver a comemoração e abre a Tela de Vitória
+	var victory_timer := get_tree().create_timer(2.0, false)
+	victory_timer.timeout.connect(func():
+		get_tree().change_scene_to_file("res://scenes/victory_screen.tscn")
+	)
 
 ## Inicia o próximo turno através do WaveManager
 func start_next_turn() -> void:
@@ -166,7 +232,7 @@ func _show_banner(message: String, color: Color = Color.WHITE) -> void:
 	turn_banner_label.visible = true
 
 	_banner_tween = create_tween()
-	_banner_tween.tween_interval(1.8)
+	_banner_tween.tween_interval(2.2)
 	_banner_tween.tween_property(turn_banner_label, "modulate:a", 0.0, 0.4)
 	_banner_tween.tween_callback(func(): turn_banner_label.visible = false)
 

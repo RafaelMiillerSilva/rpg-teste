@@ -1,26 +1,95 @@
 extends Control
 
-@onready var new_game_button: Button = $CenterContainer/PanelContainer/VBoxContainer/NewGameButton
-@onready var load_game_button: Button = $CenterContainer/PanelContainer/VBoxContainer/LoadGameButton
-@onready var quit_button: Button = $CenterContainer/PanelContainer/VBoxContainer/QuitButton
-@onready var status_label: Label = $CenterContainer/PanelContainer/VBoxContainer/StatusLabel
+@onready var initial_play_container: Control = $InitialPlayContainer
+@onready var initial_play_button: Button = $InitialPlayContainer/InitialPlayButton
+@onready var menu_buttons_container: VBoxContainer = $MenuButtonsContainer
+@onready var story_mode_button: Button = $MenuButtonsContainer/StoryModeButton
+@onready var endless_mode_button: Button = $MenuButtonsContainer/EndlessModeButton
+@onready var quit_button: Button = $MenuButtonsContainer/QuitButton
 
-const WORLD_SCENE_PATH: String = "res://scenes/world.tscn"
-const SAVE_PATH: String = "user://savegame.json"
+const LEVEL_SELECT_PATH: String = "res://scenes/level_select.tscn"
+const ENDLESS_CONFIG_PATH: String = "res://scenes/endless_config.tscn"
 
 func _ready() -> void:
-	if new_game_button:
-		new_game_button.pressed.connect(_on_new_game_pressed)
-	if load_game_button:
-		load_game_button.pressed.connect(_on_load_game_pressed)
-		if not FileAccess.file_exists(SAVE_PATH):
-			load_game_button.modulate = Color(0.75, 0.75, 0.75, 0.7)
+	# Ao abrir o jogo, exibe somente o botão Jogar no meio da tela um pouco para baixo
+	if initial_play_container:
+		initial_play_container.visible = true
+		initial_play_container.modulate.a = 1.0
+	if menu_buttons_container:
+		menu_buttons_container.visible = false
+		menu_buttons_container.modulate.a = 0.0
+
+	if initial_play_button:
+		initial_play_button.pressed.connect(_on_initial_play_pressed)
+	if story_mode_button:
+		story_mode_button.pressed.connect(_on_story_mode_pressed)
+	if endless_mode_button:
+		endless_mode_button.pressed.connect(_on_endless_mode_pressed)
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
 
 	_load_audio_settings()
-	if status_label:
-		status_label.text = ""
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause"):
+		if menu_buttons_container and menu_buttons_container.visible:
+			_show_initial_play()
+
+func _show_initial_play() -> void:
+	SoundManager.play_hit()
+	if not menu_buttons_container:
+		menu_buttons_container = get_node_or_null("MenuButtonsContainer")
+	if not initial_play_container:
+		initial_play_container = get_node_or_null("InitialPlayContainer")
+	if not initial_play_button and initial_play_container:
+		initial_play_button = initial_play_container.get_node_or_null("InitialPlayButton")
+
+	if menu_buttons_container:
+		menu_buttons_container.visible = false
+	if initial_play_container:
+		initial_play_container.visible = true
+		initial_play_container.modulate.a = 0.0
+		var t := create_tween()
+		if t:
+			t.tween_property(initial_play_container, "modulate:a", 1.0, 0.2)
+		else:
+			initial_play_container.modulate.a = 1.0
+		if initial_play_button and is_inside_tree():
+			initial_play_button.grab_focus()
+
+func _on_initial_play_pressed() -> void:
+	SoundManager.play_coin()
+	if not initial_play_container:
+		initial_play_container = get_node_or_null("InitialPlayContainer")
+	if not menu_buttons_container:
+		menu_buttons_container = get_node_or_null("MenuButtonsContainer")
+	if not story_mode_button and menu_buttons_container:
+		story_mode_button = menu_buttons_container.get_node_or_null("StoryModeButton")
+
+	if initial_play_container:
+		initial_play_container.visible = false
+	if menu_buttons_container:
+		menu_buttons_container.visible = true
+		menu_buttons_container.modulate.a = 0.0
+		var t := create_tween()
+		if t:
+			t.tween_property(menu_buttons_container, "modulate:a", 1.0, 0.2)
+		else:
+			menu_buttons_container.modulate.a = 1.0
+		if story_mode_button and is_inside_tree():
+			story_mode_button.grab_focus()
+
+func _on_story_mode_pressed() -> void:
+	SoundManager.play_coin()
+	get_tree().change_scene_to_file(LEVEL_SELECT_PATH)
+
+func _on_endless_mode_pressed() -> void:
+	SoundManager.play_coin()
+	get_tree().change_scene_to_file(ENDLESS_CONFIG_PATH)
+
+func _on_quit_pressed() -> void:
+	SoundManager.play_hit()
+	get_tree().quit()
 
 func _load_audio_settings() -> void:
 	const SETTINGS_FILE_PATH: String = "user://audio_settings.json"
@@ -43,27 +112,3 @@ func _load_audio_settings() -> void:
 						var t: float = clampf(val / 100.0, 0.00001, 1.0)
 						var linear: float = pow(t, 2.5)
 						AudioServer.set_bus_volume_db(bus_idx, linear_to_db(linear))
-
-func _on_new_game_pressed() -> void:
-	SoundManager.play_coin()
-	var world_script = load("res://scripts/world.gd")
-	if world_script and "auto_load_save_on_start" in world_script:
-		world_script.auto_load_save_on_start = false
-	get_tree().change_scene_to_file(WORLD_SCENE_PATH)
-
-func _on_load_game_pressed() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
-		SoundManager.play_damage()
-		if status_label:
-			status_label.text = "Nenhum jogo salvo encontrado!"
-		return
-
-	SoundManager.play_heal()
-	var world_script = load("res://scripts/world.gd")
-	if world_script and "auto_load_save_on_start" in world_script:
-		world_script.auto_load_save_on_start = true
-	get_tree().change_scene_to_file(WORLD_SCENE_PATH)
-
-func _on_quit_pressed() -> void:
-	SoundManager.play_hit()
-	get_tree().quit()

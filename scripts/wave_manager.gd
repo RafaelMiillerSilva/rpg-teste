@@ -2,17 +2,23 @@ class_name WaveManager
 extends Node
 
 ## Gerenciador Central de Turnos e Ondas de Inimigos Goblins.
-## Controla o escalonamento matemático das hordas, composição tática e spawn seguro contra bugs de pausa.
+## Controla o escalonamento matemático das hordas, composição tática, spawn do Chefe Final (Goblin King)
+## e suporte ao Modo História e Modo Endless.
 
 signal turn_started(turn: int, total_enemies: int)
 signal enemies_count_changed(alive_count: int)
 signal turn_completed(turn: int)
+signal boss_spawned(boss_node: Node2D)
+signal level_victory_triggered()
 
 const GOBLIN_NORMAL_SCENE: PackedScene = preload("res://scenes/enemies/goblin_normal.tscn")
 const GOBLIN_RANGE_SCENE: PackedScene = preload("res://scenes/enemies/goblin_range.tscn")
 const GOBLIN_WARRIOR_SCENE: PackedScene = preload("res://scenes/enemies/goblin_warrior.tscn")
 const GOBLIN_HEALER_SCENE: PackedScene = preload("res://scenes/enemies/goblin_healer.tscn")
 const GOBLIN_GIANT_SCENE: PackedScene = preload("res://scenes/enemies/goblin_giant.tscn")
+const GOBLIN_KING_SCENE: PackedScene = preload("res://scenes/enemies/goblin_king.tscn")
+const GoblinKingClass = preload("res://scripts/goblin_king.gd")
+const LevelManager = preload("res://scripts/level_manager.gd")
 
 const BASE_ENEMIES: float = 10.0
 const ENEMY_GROWTH_RATE: float = 1.2
@@ -45,8 +51,20 @@ static func get_total_enemies_for_turn(turn_num: int) -> int:
 
 ## Retorna a fila de PackedScenes baseada na composição tática do turno
 func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
-	var total: int = get_total_enemies_for_turn(turn_num)
 	var queue: Array[PackedScene] = []
+
+	# Turno 30 no Modo História: Chefe Final Rei Goblin e sua guarda de honra
+	if turn_num == 30 and LevelManager.current_game_mode == "story":
+		queue.append(GOBLIN_KING_SCENE)
+		for i in range(2):
+			queue.append(GOBLIN_HEALER_SCENE)
+		for i in range(4):
+			queue.append(GOBLIN_WARRIOR_SCENE)
+		for i in range(2):
+			queue.append(GOBLIN_GIANT_SCENE)
+		return queue
+
+	var total: int = get_total_enemies_for_turn(turn_num)
 
 	# Distribuição percentual oficial por turno:
 	# Turnos 1 a 4: 100% Normais
@@ -86,6 +104,10 @@ func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
 	var count_range: int = int(round(total * pct_range))
 	var count_normal: int = maxi(0, total - (count_giant + count_healer + count_warrior + count_range))
 
+	# No modo endless a cada 10 turnos (30, 40, etc), adiciona o Rei Goblin como chefe da onda
+	if LevelManager.current_game_mode == "endless" and turn_num >= 30 and (turn_num % 10 == 0):
+		queue.append(GOBLIN_KING_SCENE)
+
 	for i in range(count_giant):
 		queue.append(GOBLIN_GIANT_SCENE)
 	for i in range(count_healer):
@@ -117,9 +139,6 @@ func start_next_turn() -> void:
 	SoundManager.play_hit()
 
 func _process(delta: float) -> void:
-	# Pausa automática: Quando get_tree().paused = true, o Godot congela este _process,
-	# garantindo que NENHUM goblin spawne e nenhum turno avance enquanto o jogador estiver em menus!
-
 	if is_waiting_initial_start:
 		initial_start_timer -= delta
 		if initial_start_timer <= 0.0:
@@ -162,7 +181,15 @@ func _spawn_enemy(enemy_scene: PackedScene) -> void:
 	enemy.global_position = _get_enemy_spawn_position()
 	enemies_container.add_child(enemy)
 
+	if enemy is GoblinKingClass:
+		boss_spawned.emit(enemy)
+		enemy.boss_defeated.connect(_on_boss_defeated)
+
 	enemy.tree_exited.connect(_on_enemy_defeated)
+
+func _on_boss_defeated(_boss: Node2D) -> void:
+	if LevelManager.current_game_mode == "story" and current_turn >= 30:
+		level_victory_triggered.emit()
 
 func _on_enemy_defeated() -> void:
 	if not is_inside_tree() or not is_turn_active:
@@ -183,6 +210,10 @@ func _on_turn_completed() -> void:
 	SoundManager.play_coin()
 
 	turn_completed.emit(current_turn)
+
+	# Se for modo história no turno 30, o encerramento acontece com a derrota do Goblin King
+	if LevelManager.current_game_mode == "story" and current_turn >= 30:
+		return
 
 	# Inicia o intervalo compassado entre turnos (3.5s)
 	is_waiting_next_turn = true

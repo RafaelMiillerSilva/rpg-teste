@@ -1,0 +1,376 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_select.gd" id="1_select_script"]
+[ext_resource type="Texture2D" path="res://wallpaper/wallpaper_background.png" id="2_wallpaper"]
+[ext_resource type="FontFile" path="res://assets/font/AncientModernTales-a7Po.ttf" id="3_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_active"]
+bg_color = Color(0.12, 0.09, 0.06, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.68, 0.28, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_locked"]
+bg_color = Color(0.08, 0.07, 0.06, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.32, 0.28, 0.6)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_play_normal"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.25, 0.18, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.75, 0.3, 1)
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_play_hover"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.4, 0.28, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.88, 0.45, 1)
+shadow_color = Color(1, 0.8, 0.2, 0.4)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_back"]
+content_margin_left = 24.0
+content_margin_top = 10.0
+content_margin_right = 24.0
+content_margin_bottom = 10.0
+bg_color = Color(0.12, 0.09, 0.08, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.45, 0.25, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.04, 0.04, 0.04, 0.8)
+
+[node name="LevelSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_select_script")
+
+[node name="Wallpaper" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_wallpaper")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DarkOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.03, 0.65)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 30
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="HeaderBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_colors/font_outline_color = Color(0.2, 0.12, 0.04, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 40
+text = "SELEÇÃO DE FASES"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="MarginContainer/VBoxContainer/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 18
+text = "Escolha uma campanha militar e lidere o exército do Rei Azul"
+horizontal_alignment = 1
+
+[node name="CardsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Level1Card" type="PanelContainer" parent="MarginContainer/VBoxContainer/CardsContainer"]
+custom_minimum_size = Vector2(300, 360)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_active")
+
+[node name="CardMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LevelBadge" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "FASE DA CAMPANHA"
+horizontal_alignment = 1
+
+[node name="LevelTitle" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.95, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+text = "Level 1: O Cerco da Floresta"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TurnsInfo" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.35, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "(30 Turnos até o Rei Goblin)"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+
+[node name="Description" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.8, 0.76, 0.7, 0.9)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "Hordas de goblins assolam as fronteiras do reino. Contrate arqueiros e guerreiros, construa sua guarnição e enfrente o Rei Goblin no Turno 30!"
+autowrap_mode = 3
+
+[node name="StatusBadge" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_badge")
+text = "⚔️ Em Aberto"
+horizontal_alignment = 1
+
+[node name="BestTimeLabel" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 18
+text = "⏱️ Melhor Tempo: --:--"
+horizontal_alignment = 1
+
+[node name="PlayButton" type="Button" parent="MarginContainer/VBoxContainer/CardsContainer/Level1Card/CardMargin/VBoxContainer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.95, 0.88, 1)
+theme_override_colors/font_hover_color = Color(1, 0.92, 0.4, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_play_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_play_hover")
+text = "⚔️ Jogar"
+
+[node name="Level2Card" type="PanelContainer" parent="MarginContainer/VBoxContainer/CardsContainer"]
+custom_minimum_size = Vector2(300, 360)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_locked")
+
+[node name="CardMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LevelBadge" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.55, 0.5, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "FASE BLOQUEADA"
+horizontal_alignment = 1
+
+[node name="LevelTitle" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+text = "Level 2 (🔒 Bloqueado)"
+horizontal_alignment = 1
+
+[node name="TurnsInfo" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.48, 0.45, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "(As Cavernas Esquecidas)"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+
+[node name="Description" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 0.7)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "Novos perigos se escondem nas profundezas da caverna com xamãs e piromantes. Complete o Level 1 para desbloquear."
+autowrap_mode = 3
+
+[node name="LockedButton" type="Button" parent="MarginContainer/VBoxContainer/CardsContainer/Level2Card/CardMargin/VBoxContainer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+disabled = true
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 20
+text = "🔒 Bloqueado"
+
+[node name="Level3Card" type="PanelContainer" parent="MarginContainer/VBoxContainer/CardsContainer"]
+custom_minimum_size = Vector2(300, 360)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_locked")
+
+[node name="CardMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LevelBadge" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.55, 0.5, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "FASE BLOQUEADA"
+horizontal_alignment = 1
+
+[node name="LevelTitle" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+text = "Level 3 (🔒 Bloqueado)"
+horizontal_alignment = 1
+
+[node name="TurnsInfo" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.48, 0.45, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "(A Fortaleza da Montanha)"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+
+[node name="Description" type="Label" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 0.7)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "A fortaleza ancestral dos monstros gigantes. Uma batalha épica espera os melhores comandantes."
+autowrap_mode = 3
+
+[node name="LockedButton" type="Button" parent="MarginContainer/VBoxContainer/CardsContainer/Level3Card/CardMargin/VBoxContainer"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+disabled = true
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 20
+text = "🔒 Bloqueado"
+
+[node name="BottomBar" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/BottomBar"]
+custom_minimum_size = Vector2(260, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9, 0.4, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_back")
+text = "⬅️ Voltar ao Menu Principal"

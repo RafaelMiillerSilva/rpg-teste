@@ -153,7 +153,7 @@ animations = [{
 size = Vector2(32, 32)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sword"]
-size = Vector2(80, 70)
+size = Vector2(92, 80.5)
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 y_sort_enabled = true

@@ -126,6 +126,7 @@ func _init() -> void:
 	else:
 		print("ERRO: Falha na persistência do LevelManager")
 		success = false
+	LevelManager.reset_progress()
 
 	# 7. Teste World HUD Nodes
 	print("7. Testando nós da HUD no world.tscn...")

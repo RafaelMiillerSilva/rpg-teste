@@ -22,6 +22,7 @@ func _ready() -> void:
 
 func _on_retry_pressed() -> void:
 	SoundManager.play_confirm()
+	UpgradeManager.reset_upgrades()
 	var world_script = load("res://scripts/world.gd")
 	if world_script and "auto_load_save_on_start" in world_script:
 		world_script.auto_load_save_on_start = false
@@ -29,4 +30,5 @@ func _on_retry_pressed() -> void:
 
 func _on_menu_pressed() -> void:
 	SoundManager.play_confirm()
+	UpgradeManager.reset_upgrades()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)

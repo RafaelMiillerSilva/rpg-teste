@@ -10,14 +10,15 @@ extends CharacterBody2D
 var is_player_in_range: bool = false
 const ALLY_SCENE: PackedScene = preload("res://scenes/ally_monk.tscn")
 
-@onready var interaction_area: Area2D = $InteractionArea
-@onready var interaction_label: Label = $InteractionLabel
+@onready var interaction_area: Area2D = get_node_or_null("InteractionArea")
+@onready var interaction_label: Label = get_node_or_null("InteractionLabel")
 @export var health: int = 9999
 @export var max_health: int = 9999
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D if has_node("AnimatedSprite2D") else null
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("npcs")
 	collision_layer = 0
 	collision_mask = 0
@@ -34,53 +35,22 @@ func _ready() -> void:
 		interaction_label.visible = false
 
 	if interaction_area:
-		interaction_area.collision_layer = 0
-		interaction_area.collision_mask = 1
-		interaction_area.body_entered.connect(_on_interaction_area_body_entered)
-		interaction_area.body_exited.connect(_on_interaction_area_body_exited)
+		interaction_area.monitoring = false
+		interaction_area.monitorable = false
 
 func take_damage(_amount: int = 0, _knockback: Vector2 = Vector2.ZERO, _attacker = null) -> void:
 	# Recrutador permanente não sofre dano nem empurrão
 	pass
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_player_in_range:
-		return
-
-	var dialogue_box := get_tree().get_first_node_in_group("dialogue_box")
-	if dialogue_box and dialogue_box.get("is_active"):
-		return
-
-	var pressed_interact := false
-	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
-		pressed_interact = true
-	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
-		pressed_interact = true
-
-	if pressed_interact:
-		get_viewport().set_input_as_handled()
-		trigger_dialogue()
+func _unhandled_input(_event: InputEvent) -> void:
+	# Diálogo desativado por enquanto (compra de tropas feita exclusivamente nas construções)
+	return
 
 func trigger_dialogue() -> void:
-	var dialogue_box := get_tree().get_first_node_in_group("dialogue_box")
-	if not dialogue_box or not dialogue_box.has_method("start_dialogue"):
-		return
+	# Diálogo desativado por enquanto (compra de tropas feita exclusivamente nas construções)
+	return
 
-	if interaction_label:
-		interaction_label.visible = false
-
-	var lines: Array[String] = [
-		"Saudações, Majestade! O Monastério treina monges curandeiros para abençoar e curar seu esquadrão em batalha. Deseja recrutar um Monge por %d moedas de ouro? [Pressione E para Confirmar / Afaste-se para Cancelar]" % hiring_cost
-	]
-	dialogue_box.start_dialogue(lines, npc_name)
-
-	if not dialogue_box.dialogue_finished.is_connected(_on_hiring_dialogue_finished):
-		dialogue_box.dialogue_finished.connect(_on_hiring_dialogue_finished, CONNECT_ONE_SHOT)
-
-func _on_hiring_dialogue_finished() -> void:
-	if not is_player_in_range:
-		return
-
+func _on_confirm_hiring() -> void:
 	var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
 	if not is_instance_valid(player):
 		return
@@ -111,6 +81,9 @@ func _on_hiring_dialogue_finished() -> void:
 			]
 			dialogue_box.start_dialogue(fail_lines, npc_name)
 
+func _on_cancel_hiring() -> void:
+	pass
+
 func _spawn_ally() -> void:
 	if not ALLY_SCENE:
 		return
@@ -126,15 +99,12 @@ func _spawn_ally() -> void:
 	elif get_parent():
 		get_parent().add_child(ally)
 
-func _on_interaction_area_body_entered(body: Node2D) -> void:
-	if body.is_in_group("player"):
-		is_player_in_range = true
-		var dialogue_box := get_tree().get_first_node_in_group("dialogue_box")
-		if not (dialogue_box and dialogue_box.get("is_active")) and interaction_label:
-			interaction_label.visible = true
+func _on_interaction_area_body_entered(_body: Node2D) -> void:
+	is_player_in_range = false
+	if interaction_label:
+		interaction_label.visible = false
 
-func _on_interaction_area_body_exited(body: Node2D) -> void:
-	if body.is_in_group("player"):
-		is_player_in_range = false
-		if interaction_label:
-			interaction_label.visible = false
+func _on_interaction_area_body_exited(_body: Node2D) -> void:
+	is_player_in_range = false
+	if interaction_label:
+		interaction_label.visible = false

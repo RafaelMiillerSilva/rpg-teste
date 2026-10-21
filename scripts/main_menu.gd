@@ -103,10 +103,12 @@ func _on_initial_play_pressed() -> void:
 
 func _on_story_mode_pressed() -> void:
 	SoundManager.play_confirm()
+	UpgradeManager.reset_upgrades()
 	get_tree().change_scene_to_file(LEVEL_SELECT_PATH)
 
 func _on_endless_mode_pressed() -> void:
 	SoundManager.play_confirm()
+	UpgradeManager.reset_upgrades()
 	get_tree().change_scene_to_file(ENDLESS_CONFIG_PATH)
 
 func _on_quit_pressed() -> void:

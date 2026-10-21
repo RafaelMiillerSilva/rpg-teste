@@ -154,23 +154,37 @@ func _init_sounds() -> void:
 	stream_block = _load_audio_file(PATH_BLOCK)
 	stream_boss_alert = _load_audio_file(PATH_BOSS_ALERT)
 
+static func ensure_audio_buses() -> void:
+	if AudioServer.get_bus_index("Music") == -1:
+		var idx := AudioServer.bus_count
+		AudioServer.add_bus(idx)
+		AudioServer.set_bus_name(idx, "Music")
+		AudioServer.set_bus_send(idx, "Master")
+	if AudioServer.get_bus_index("SFX") == -1:
+		var idx := AudioServer.bus_count
+		AudioServer.add_bus(idx)
+		AudioServer.set_bus_name(idx, "SFX")
+		AudioServer.set_bus_send(idx, "Master")
+
 func _init_audio_pool() -> void:
+	ensure_audio_buses()
 	if not _players.is_empty():
 		return
 	for i in range(POOL_SIZE):
 		var p := AudioStreamPlayer.new()
 		p.process_mode = Node.PROCESS_MODE_ALWAYS
-		p.bus = &"Master"
+		p.bus = &"SFX"
 		add_child(p)
 		_players.append(p)
 
 func _init_music_player() -> void:
+	ensure_audio_buses()
 	if _music_player and is_instance_valid(_music_player):
 		return
 	_music_player = AudioStreamPlayer.new()
 	_music_player.name = "MusicPlayer"
 	_music_player.process_mode = Node.PROCESS_MODE_ALWAYS
-	_music_player.bus = &"Master"
+	_music_player.bus = &"Music"
 	_music_player.finished.connect(_on_music_finished)
 	add_child(_music_player)
 
@@ -181,7 +195,7 @@ func _get_available_player() -> AudioStreamPlayer:
 	# Se todos os canais estiverem ocupados, cria um novo dinamicamente
 	var p := AudioStreamPlayer.new()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
-	p.bus = &"Master"
+	p.bus = &"SFX"
 	add_child(p)
 	_players.append(p)
 	return p

@@ -21,6 +21,7 @@ const TORNADO_TICK_INTERVAL: float = 0.8
 const TORNADO_TICK_DAMAGE: int = 45
 
 const DUST_SCENE: PackedScene = preload("res://scenes/dust_effect.tscn")
+const EXPLOSION_SCENE: PackedScene = preload("res://scenes/explosion_effect.tscn")
 const WIND_SOUND: AudioStream = preload("res://assets/sounds/8_Atk_Magic_SFX/25_Wind_01.wav")
 
 var is_tornado_active: bool = false
@@ -28,6 +29,13 @@ var _normal_attack_timer: float = 1.0
 var _tornado_cooldown_timer: float = 5.0
 var _tornado_duration_timer: float = 0.0
 var _tornado_damage_tick_timer: float = 0.0
+var _tornado_vortex_angle: float = 0.0
+var _tornado_dust_layer_timer: float = 0.0
+
+## Variáveis da sequência de morte do Boss (5s imóvel com explosões)
+var _is_dying_sequence: bool = false
+var _death_sequence_timer: float = 0.0
+var _explosion_spawn_timer: float = 0.0
 
 @onready var wind_audio_player: AudioStreamPlayer2D = $WindAudioPlayer if has_node("WindAudioPlayer") else null
 
@@ -72,6 +80,12 @@ func _apply_turn_scaling() -> void:
 	speed = 95.0
 
 func _physics_process(delta: float) -> void:
+	if _is_dying_sequence:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		_process_death_sequence(delta)
+		return
+
 	if is_dead:
 		return
 
@@ -198,6 +212,8 @@ func _start_tornado_attack() -> void:
 	_tornado_duration_timer = TORNADO_DURATION
 	_tornado_damage_tick_timer = 0.0
 	_tornado_cooldown_timer = TORNADO_COOLDOWN
+	_tornado_vortex_angle = 0.0
+	_tornado_dust_layer_timer = 0.0
 
 	if animated_sprite:
 		animated_sprite.speed_scale = 1.5
@@ -207,10 +223,12 @@ func _start_tornado_attack() -> void:
 		wind_audio_player.play()
 
 	_apply_screen_shake(3.0, 0.4)
+	_spawn_circle_layers_of_dust()
 
 func _process_tornado(delta: float) -> void:
 	_tornado_duration_timer -= delta
 	_tornado_damage_tick_timer -= delta
+	_tornado_vortex_angle += 7.5 * delta
 
 	# Garante que o som de vento continue em loop durante o tornado
 	if wind_audio_player and not wind_audio_player.playing:
@@ -222,10 +240,16 @@ func _process_tornado(delta: float) -> void:
 		velocity = velocity.move_toward(dir * (speed * 0.7), 200.0 * delta)
 		move_and_slide()
 
-	# Vórtice de sucção: puxa o jogador e aliados em direção ao centro do boss (área de 280px)
+	# Vórtice de sucção: força exatamente 5 a menos que a velocidade do player (ex: 245 px/s)
 	_apply_suction_vortex(delta)
 
-	# Causa 15 de dano a cada 0.8s
+	# Efeito visual de vento em várias camadas concêntricas de círculos usando Dust_01.png
+	_tornado_dust_layer_timer -= delta
+	if _tornado_dust_layer_timer <= 0.0:
+		_tornado_dust_layer_timer = 0.08
+		_spawn_circle_layers_of_dust()
+
+	# Causa dano periódico do tornado
 	if _tornado_damage_tick_timer <= 0.0:
 		_tornado_damage_tick_timer = TORNADO_TICK_INTERVAL
 		_tick_tornado_damage()
@@ -236,16 +260,18 @@ func _process_tornado(delta: float) -> void:
 
 func _apply_suction_vortex(delta: float, override_heroes: Array[Node2D] = []) -> void:
 	var heroes := override_heroes if not override_heroes.is_empty() else _get_all_heroes()
+	var player_node := get_tree().get_first_node_in_group("player") as CharacterBody2D
+	var p_speed: float = player_node.speed if (is_instance_valid(player_node) and "speed" in player_node) else 250.0
+	# Força do tornado: exatamente 5 a menos que a velocidade do jogador (ex: 245.0)
+	var pull_speed: float = maxf(10.0, p_speed - 5.0)
+
 	for hero in heroes:
 		var dist := global_position.distance_to(hero.global_position)
 		if dist <= TORNADO_RADIUS:
 			var pull_dir := (global_position - hero.global_position).normalized()
-			var dist_factor: float = 1.0 - (dist / TORNADO_RADIUS)
-			var pull_amount: float = TORNADO_PULL_FORCE * (0.4 + dist_factor * 0.6)
-
+			hero.global_position += pull_dir * (pull_speed * delta)
 			if "velocity" in hero:
-				hero.velocity += pull_dir * (pull_amount * delta * 6.0)
-			hero.global_position += pull_dir * (pull_amount * delta * 0.7)
+				hero.velocity = hero.velocity.move_toward(pull_dir * pull_speed, 400.0 * delta)
 
 func _tick_tornado_damage() -> void:
 	SoundManager.play_slash()
@@ -288,7 +314,7 @@ func _get_all_heroes() -> Array[Node2D]:
 # DANO, VIDA E MORTE
 # ==============================================================================
 func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, attacker: Node = null) -> void:
-	if is_dead:
+	if is_dead or _is_dying_sequence:
 		return
 
 	# O Rei Goblin tem armadura pesada (5) e quase imune a knockback
@@ -315,18 +341,77 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, attacker: N
 		die()
 
 func die() -> void:
-	if is_dead:
+	if is_dead or _is_dying_sequence:
 		return
+	_is_dying_sequence = true
 	is_dead = true
 	can_attack = false
 	is_attacking = false
 	is_tornado_active = false
+	velocity = Vector2.ZERO
 
 	if wind_audio_player:
 		wind_audio_player.stop()
 
+	# Desativa colisões para não interferir com jogador ou tropas
+	collision_layer = 0
+	collision_mask = 0
+	if collision_shape:
+		collision_shape.set_deferred("disabled", true)
+	if health_bar:
+		health_bar.visible = false
+
+	# Boss fica parado
+	if animated_sprite:
+		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("idle"):
+			animated_sprite.play("idle")
+			animated_sprite.frame = 0
+		animated_sprite.stop()
+
 	boss_health_changed.emit(0, max_health)
-	boss_defeated.emit(self)
+	_death_sequence_timer = 0.0
+	_explosion_spawn_timer = 0.0
+
+func _process_death_sequence(delta: float) -> void:
+	_death_sequence_timer += delta
+	_explosion_spawn_timer -= delta
+
+	if _explosion_spawn_timer <= 0.0:
+		_explosion_spawn_timer = randf_range(0.12, 0.20)
+		_spawn_death_explosion()
+
+	if _death_sequence_timer >= 5.0:
+		_finish_boss_death_sequence()
+
+func _spawn_death_explosion() -> void:
+	if not is_inside_tree() or not EXPLOSION_SCENE:
+		return
+	var parent_node := get_parent()
+	if not parent_node:
+		return
+
+	var exp_node = EXPLOSION_SCENE.instantiate() as AnimatedSprite2D
+	var offset := Vector2(randf_range(-70.0, 70.0), randf_range(-90.0, 30.0))
+	exp_node.global_position = global_position + offset
+	exp_node.scale = Vector2.ONE * randf_range(1.1, 1.8)
+
+	if randf() < 0.5 and exp_node.has_method("setup_explosion_1"):
+		exp_node.setup_explosion_1()
+	elif exp_node.has_method("setup_explosion_2"):
+		exp_node.setup_explosion_2()
+
+	parent_node.call_deferred("add_child", exp_node)
+
+	if animated_sprite:
+		animated_sprite.modulate = Color(2.0, 1.4, 0.8, 1.0)
+		var tween := create_tween()
+		tween.tween_property(animated_sprite, "modulate", Color.WHITE, 0.12)
+
+	_apply_screen_shake(2.5, 0.12)
+	SoundManager.play_hit()
+
+func _finish_boss_death_sequence() -> void:
+	_is_dying_sequence = false
 
 	SoundManager.play_enemy_death()
 
@@ -334,7 +419,46 @@ func die() -> void:
 	for i in range(12):
 		_drop_loot()
 
-	super.die()
+	# Várias partículas de fumaça (dust) saem dele ao sumir
+	_spawn_final_dust_burst()
+
+	# Os inimigos vivos também morrem deixando uma fumaça
+	_kill_all_living_enemies()
+
+	# Emite sinal de vitória/derrota do chefe
+	boss_defeated.emit(self)
+
+	# Remove o boss
+	queue_free()
+
+func _spawn_final_dust_burst() -> void:
+	if not is_inside_tree() or not DUST_SCENE:
+		return
+	var parent_node := get_parent()
+	if not parent_node:
+		return
+	for i in range(14):
+		var dust := DUST_SCENE.instantiate() as Node2D
+		var angle := randf() * TAU
+		var dist := randf_range(15.0, 85.0)
+		dust.global_position = global_position + Vector2(cos(angle), sin(angle)) * dist
+		dust.scale = Vector2.ONE * randf_range(1.3, 2.2)
+		parent_node.call_deferred("add_child", dust)
+
+func _kill_all_living_enemies() -> void:
+	if not is_inside_tree() or not get_tree():
+		return
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if is_instance_valid(enemy) and enemy != self:
+			if not ("is_dead" in enemy and enemy.is_dead):
+				if DUST_SCENE and enemy.get_parent():
+					var dust := DUST_SCENE.instantiate() as Node2D
+					dust.global_position = enemy.global_position
+					dust.scale = Vector2.ONE * randf_range(1.1, 1.5)
+					enemy.get_parent().call_deferred("add_child", dust)
+				if enemy.has_method("die"):
+					enemy.die()
 
 func _spawn_impact_dust() -> void:
 	if not is_inside_tree() or not DUST_SCENE:
@@ -349,17 +473,39 @@ func _spawn_impact_dust() -> void:
 		parent_node.call_deferred("add_child", dust)
 
 func _spawn_tornado_dust() -> void:
+	_spawn_circle_layers_of_dust()
+
+## Cria o efeito de vento usando o sprite Dust_01.png organizado em múltiplas camadas de círculo
+func _spawn_circle_layers_of_dust() -> void:
 	if not is_inside_tree() or not DUST_SCENE:
 		return
 	var parent_node := get_parent()
 	if not parent_node:
 		return
-	for i in range(4):
-		var angle := randf() * TAU
-		var dust := DUST_SCENE.instantiate() as Node2D
-		dust.global_position = global_position + Vector2(cos(angle), sin(angle)) * randf_range(60, 220)
-		dust.scale = Vector2.ONE * randf_range(0.9, 1.4)
-		parent_node.call_deferred("add_child", dust)
+
+	# Várias camadas concêntricas de círculos ao redor do chefe
+	var layers: Array[Dictionary] = [
+		{"radius": 75.0,  "count": 2, "scale": 1.1,  "offset": 0.0},
+		{"radius": 145.0, "count": 3, "scale": 1.25, "offset": 0.6},
+		{"radius": 220.0, "count": 4, "scale": 1.4,  "offset": 1.2},
+		{"radius": 295.0, "count": 4, "scale": 1.55, "offset": 1.8}
+	]
+
+	for layer in layers:
+		var r: float = layer["radius"]
+		var count: int = layer["count"]
+		var sc: float = layer["scale"]
+		var off: float = layer["offset"]
+
+		for i in range(count):
+			var a: float = _tornado_vortex_angle + off + (float(i) * (TAU / float(count)))
+			var dust := DUST_SCENE.instantiate() as Node2D
+			dust.global_position = global_position + Vector2(cos(a), sin(a)) * r
+			dust.scale = Vector2.ONE * randf_range(sc * 0.9, sc * 1.15)
+			dust.rotation = a + (PI * 0.5) # Alinha o sprite tangencialmente ao círculo de vento
+			if dust.has_method("setup_dust_1"):
+				dust.setup_dust_1() # Garante o uso exclusivo de Dust_01.png
+			parent_node.call_deferred("add_child", dust)
 
 func _apply_screen_shake(intensity: float, duration: float) -> void:
 	if not is_inside_tree() or not get_tree():

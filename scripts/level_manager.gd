@@ -35,6 +35,9 @@ static func load_progress() -> Dictionary:
 
 ## Salva a conclusão do Level 1 e atualiza o recorde se for menor
 static func record_level_1_victory(time_seconds: float, coins: int) -> bool:
+	if is_nan(time_seconds) or is_inf(time_seconds) or time_seconds <= 0.0:
+		return false
+
 	var data := load_progress()
 	var prev_best: float = float(data.get("level_1_best_time", 0.0))
 	var is_record := false
@@ -64,14 +67,35 @@ static func get_level_1_best_time() -> float:
 	var data := load_progress()
 	return float(data.get("level_1_best_time", 0.0))
 
-## Formata segundos em MM:SS ou MMm SSs
+## Reseta o progresso do Level 1
+static func reset_progress() -> void:
+	var data := {
+		"level_1_completed": false,
+		"level_1_best_time": 0.0
+	}
+	var file := FileAccess.open(PROGRESS_FILE, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data, "\t"))
+		file.close()
+	last_completion_time = 0.0
+	last_is_new_record = false
+	last_coins_collected = 0
+
+## Formata segundos em MM:SS, HH:MM:SS ou formato detalhado (1h 20m 15s)
 static func format_time(total_seconds: float, detailed: bool = false) -> String:
-	var total_int := int(floor(maxf(0.0, total_seconds)))
-	var mins := total_int / 60
+	if is_nan(total_seconds) or is_inf(total_seconds) or total_seconds < 0.0:
+		return "--:--" if not detailed else "--"
+	var total_int := int(floor(total_seconds))
+	var hours := total_int / 3600
+	var mins := (total_int % 3600) / 60
 	var secs := total_int % 60
 	if detailed:
-		if mins > 0:
+		if hours > 0:
+			return "%dh %02dm %02ds" % [hours, mins, secs]
+		elif mins > 0:
 			return "%dm %02ds" % [mins, secs]
 		else:
 			return "%ds" % secs
+	if hours > 0:
+		return "%02d:%02d:%02d" % [hours, mins, secs]
 	return "%02d:%02d" % [mins, secs]

@@ -24,7 +24,9 @@ const LevelManager = preload("res://scripts/level_manager.gd")
 const BASE_ENEMIES: float = 10.0
 const ENEMY_GROWTH_RATE: float = 1.2
 const MAX_ENEMIES_CAP: int = 120
-const SPAWN_INTERVAL: float = 0.6
+const TARGET_BATCH_SIZE: int = 20
+const SPAWN_INTERVAL: float = 0.2
+const BATCH_COOLDOWN: float = 3.5
 const TURN_COOLDOWN: float = 3.5
 const ENEMY_SPAWN_DISTANCE: float = 650.0
 
@@ -38,6 +40,12 @@ var is_waiting_next_turn: bool = false
 var is_waiting_initial_start: bool = true
 var initial_start_timer: float = 1.0
 
+## Sistema de controle de lotes (batches) de spawn
+var batch_sizes: Array[int] = []
+var current_batch_index: int = 0
+var enemies_in_current_batch: int = 0
+var spawned_in_current_batch: int = 0
+
 var enemies_container: Node2D = null
 var player: CharacterBody2D = null
 
@@ -50,9 +58,11 @@ static func get_total_enemies_for_turn(turn_num: int) -> int:
 	var count: int = int(round(BASE_ENEMIES * pow(ENEMY_GROWTH_RATE, t - 1)))
 	return clampi(count, 10, MAX_ENEMIES_CAP)
 
-## Retorna a fila de PackedScenes baseada na composição tática do turno
+## Retorna a fila de PackedScenes baseada na composição tática do turno,
+## dividindo os inimigos em lotes iguais de ~20 com composição balanceada.
 func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
 	var queue: Array[PackedScene] = []
+	batch_sizes.clear()
 
 	# Turno 30 no Modo História: Chefe Final Rei Goblin e sua guarda de honra
 	if turn_num == 30 and LevelManager.current_game_mode == "story":
@@ -65,6 +75,7 @@ func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
 			queue.append(GOBLIN_GIANT_SCENE)
 		for i in range(2):
 			queue.append(GOBLIN_MAGE_SCENE)
+		batch_sizes.append(queue.size())
 		return queue
 
 	var total: int = get_total_enemies_for_turn(turn_num)
@@ -75,7 +86,7 @@ func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
 	# Turnos 10 a 14: 50% Normais, 30% Range, 20% Warriors
 	# Turnos 15 a 19: 20% Normais, 30% Range, 40% Warriors, 10% Healers
 	# Turnos 20 a 24: 15% Normais, 30% Range, 40% Warriors, 10% Healers, 5% Giants
-	# Turnos 25+: adiciona 2.5% Mages
+	# Turnos 25+: 4% Mages, 5% Giants, 10% Healers, 40% Warriors, 30% Range, 11% Normais
 
 	var pct_normal: float = 1.0
 	var pct_range: float = 0.0
@@ -85,12 +96,12 @@ func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
 	var pct_mage: float = 0.0
 
 	if turn_num >= 25:
-		pct_normal = 0.125
+		pct_normal = 0.11
 		pct_range = 0.30
 		pct_warrior = 0.40
 		pct_healer = 0.10
 		pct_giant = 0.05
-		pct_mage = 0.025 # 2.5% do total de goblins a partir da rodada 25
+		pct_mage = 0.04 # Aumentado para 4%
 	elif turn_num >= 20:
 		pct_normal = 0.15
 		pct_range = 0.30
@@ -117,24 +128,41 @@ func generate_wave_composition(turn_num: int) -> Array[PackedScene]:
 	var count_range: int = int(round(total * pct_range))
 	var count_normal: int = maxi(0, total - (count_giant + count_healer + count_warrior + count_range + count_mage))
 
-	# No modo endless a cada 10 turnos (30, 40, etc), adiciona o Rei Goblin como chefe da onda
+	# Divisão em lotes iguais de ~20 inimigos
+	var num_batches: int = maxi(1, int(ceil(float(total) / float(TARGET_BATCH_SIZE))))
+	var batches: Array = []
+	for b in range(num_batches):
+		batches.append([])
+
+	# Estrutura de distribuição proporcional e intercalada entre os lotes
+	# Evita agrupar todos os gigantes e curandeiros em uma única fase da onda
+	var type_pools: Array = [
+		{"scene": GOBLIN_GIANT_SCENE, "count": count_giant},
+		{"scene": GOBLIN_MAGE_SCENE, "count": count_mage},
+		{"scene": GOBLIN_HEALER_SCENE, "count": count_healer},
+		{"scene": GOBLIN_WARRIOR_SCENE, "count": count_warrior},
+		{"scene": GOBLIN_RANGE_SCENE, "count": count_range},
+		{"scene": GOBLIN_NORMAL_SCENE, "count": count_normal},
+	]
+
+	for pool in type_pools:
+		var sc: PackedScene = pool["scene"]
+		var cnt: int = pool["count"]
+		for i in range(cnt):
+			var batch_idx: int = i % num_batches
+			batches[batch_idx].append(sc)
+
+	# No modo endless a cada 10 turnos (30, 40, etc), adiciona o Rei Goblin como líder do primeiro lote
 	if LevelManager.current_game_mode == "endless" and turn_num >= 30 and (turn_num % 10 == 0):
-		queue.append(GOBLIN_KING_SCENE)
+		batches[0].insert(0, GOBLIN_KING_SCENE)
 
-	for i in range(count_mage):
-		queue.append(GOBLIN_MAGE_SCENE)
-	for i in range(count_giant):
-		queue.append(GOBLIN_GIANT_SCENE)
-	for i in range(count_healer):
-		queue.append(GOBLIN_HEALER_SCENE)
-	for i in range(count_warrior):
-		queue.append(GOBLIN_WARRIOR_SCENE)
-	for i in range(count_range):
-		queue.append(GOBLIN_RANGE_SCENE)
-	for i in range(count_normal):
-		queue.append(GOBLIN_NORMAL_SCENE)
+	# Embaralha os inimigos dentro de cada lote individualmente para variação orgânica
+	for b in batches:
+		b.shuffle()
+		batch_sizes.append(b.size())
+		for sc in b:
+			queue.append(sc)
 
-	queue.shuffle()
 	return queue
 
 func start_next_turn() -> void:
@@ -148,6 +176,10 @@ func start_next_turn() -> void:
 	spawn_queue = generate_wave_composition(current_turn)
 	enemies_alive = spawn_queue.size()
 	spawn_cooldown_timer = 0.0
+
+	current_batch_index = 0
+	spawned_in_current_batch = 0
+	enemies_in_current_batch = batch_sizes[0] if not batch_sizes.is_empty() else spawn_queue.size()
 
 	turn_started.emit(current_turn, enemies_alive)
 	enemies_count_changed.emit(enemies_alive)
@@ -171,10 +203,22 @@ func _process(delta: float) -> void:
 	if is_turn_active and not spawn_queue.is_empty():
 		spawn_cooldown_timer -= delta
 		if spawn_cooldown_timer <= 0.0:
-			spawn_cooldown_timer = SPAWN_INTERVAL
 			var scene := spawn_queue.pop_front() as PackedScene
 			if scene:
 				_spawn_enemy(scene)
+				spawned_in_current_batch += 1
+
+			# Verifica se completou o lote de ~20
+			if spawned_in_current_batch >= enemies_in_current_batch:
+				spawn_cooldown_timer = BATCH_COOLDOWN
+				spawned_in_current_batch = 0
+				current_batch_index += 1
+				if current_batch_index < batch_sizes.size():
+					enemies_in_current_batch = batch_sizes[current_batch_index]
+				else:
+					enemies_in_current_batch = 0
+			else:
+				spawn_cooldown_timer = SPAWN_INTERVAL
 
 func _get_enemy_spawn_position() -> Vector2:
 	var center := player.global_position if is_instance_valid(player) else Vector2(4000.0, 2900.0)

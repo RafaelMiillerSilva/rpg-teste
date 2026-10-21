@@ -5,6 +5,7 @@ extends CharacterBody2D
 ## Gerencia vida, dano, escala por turno, IA de perseguição/alvo e morte.
 
 const ITEM_PICKUP_SCENE: PackedScene = preload("res://scenes/item_pickup.tscn")
+const DUST_EFFECT_SCENE: PackedScene = preload("res://scenes/dust_effect.tscn")
 
 @export var base_max_health: int = 25
 @export var base_damage: int = 8
@@ -207,9 +208,53 @@ func _update_stuck_detector(delta: float, is_trying: bool) -> void:
 			_stuck_check_pos = global_position
 		_stuck_interval_timer = 0.0
 
-	# Se atingiu 5.0 segundos travado andando sem sair da posição
+	# Se atingiu 5.0 segundos travado andando sem sair da posição: respawna o inimigo
 	if _stuck_timer >= 5.0:
-		_trigger_anti_stuck()
+		if goblin_type_name == "king":
+			_trigger_anti_stuck()
+		else:
+			_respawn_stuck_enemy()
+
+## Sistema Anti-Travamento: Respawna o inimigo nos arredores do jogador caso fique travado
+func _respawn_stuck_enemy() -> void:
+	if is_dead or not is_inside_tree():
+		return
+
+	# Efeito de fumaça na posição onde travou
+	_spawn_respawn_dust(global_position)
+
+	# Calcula nova posição de spawn nos arredores do jogador (distância segura de 650-850px)
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var center := player.global_position if is_instance_valid(player) else Vector2(4000.0, 2900.0)
+	var angle := randf() * TAU
+	var offset := Vector2(cos(angle), sin(angle)) * randf_range(650.0, 850.0)
+	var new_pos := center + offset
+	new_pos.x = clampf(new_pos.x, 350.0, 7650.0)
+	new_pos.y = clampf(new_pos.y, 350.0, 5650.0)
+
+	global_position = new_pos
+	velocity = Vector2.ZERO
+
+	# Efeito de fumaça na nova posição de reaparecimento
+	_spawn_respawn_dust(global_position)
+
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = false
+	avoidance_timer = 0.0
+	avoidance_direction = Vector2.ZERO
+	_stuck_check_pos = global_position
+	current_target = _find_target()
+
+func _spawn_respawn_dust(pos: Vector2) -> void:
+	if not DUST_EFFECT_SCENE or not is_inside_tree():
+		return
+	var dust := DUST_EFFECT_SCENE.instantiate() as Node2D
+	dust.global_position = pos
+	dust.scale = Vector2(1.3, 1.3)
+	var parent_node := get_parent()
+	if parent_node:
+		parent_node.call_deferred("add_child", dust)
 
 ## Sistema Anti-Bugs: Ativa o recuo para trás
 func _trigger_anti_stuck() -> void:

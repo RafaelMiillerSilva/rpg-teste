@@ -123,14 +123,14 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(580, 480)
+custom_minimum_size = Vector2(760, 520)
 layout_mode = 2
 theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
@@ -138,7 +138,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "🏛️ MELHORIAS DO REINO & ESQUADRÃO"
 horizontal_alignment = 1
 
@@ -146,172 +146,23 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "Tesouro Real: 🪙 0 Moedas"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="CenterContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="UpgradesList" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(720, 360)
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="UpgradesList" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
-
-[node name="DamageCard" type="PanelContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="HBox" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/DamageCard"]
-layout_mode = 2
-
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/DamageCard/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Name" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/DamageCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
-theme_override_font_sizes/font_size = 15
-text = "⚔️ Poder de Dano (+3 Ataque)"
-
-[node name="DmgEffectLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/DamageCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "+0 Ataque ao Esquadrão"
-
-[node name="DmgLevelLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/DamageCard/HBox"]
-custom_minimum_size = Vector2(70, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "Nível 0"
-horizontal_alignment = 1
-
-[node name="DmgBuyButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/DamageCard/HBox"]
-custom_minimum_size = Vector2(130, 34)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-text = "Melhorar (🪙 30)"
-
-[node name="SpeedCard" type="PanelContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="HBox" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/SpeedCard"]
-layout_mode = 2
-
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/SpeedCard/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Name" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/SpeedCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.75, 0.35, 1)
-theme_override_font_sizes/font_size = 15
-text = "⚡ Velocidade de Ataque (-10% Cooldown)"
-
-[node name="SpdEffectLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/SpeedCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "-0% Intervalo de Golpe"
-
-[node name="SpdLevelLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/SpeedCard/HBox"]
-custom_minimum_size = Vector2(70, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "Nível 0"
-horizontal_alignment = 1
-
-[node name="SpdBuyButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/SpeedCard/HBox"]
-custom_minimum_size = Vector2(130, 34)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-text = "Melhorar (🪙 35)"
-
-[node name="HealthCard" type="PanelContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="HBox" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/HealthCard"]
-layout_mode = 2
-
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/HealthCard/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Name" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/HealthCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.9, 0.45, 1)
-theme_override_font_sizes/font_size = 15
-text = "❤️ Vida Máxima (+20 HP)"
-
-[node name="HpEffectLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/HealthCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "+0 HP Total (+20 ao Rei)"
-
-[node name="HpLevelLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/HealthCard/HBox"]
-custom_minimum_size = Vector2(70, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "Nível 0"
-horizontal_alignment = 1
-
-[node name="HpBuyButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/HealthCard/HBox"]
-custom_minimum_size = Vector2(130, 34)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-text = "Melhorar (🪙 25)"
-
-[node name="ArmorCard" type="PanelContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="HBox" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/ArmorCard"]
-layout_mode = 2
-
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/ArmorCard/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Name" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/ArmorCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.75, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "🛡️ Armadura (+1 Absorção de Dano)"
-
-[node name="ArmEffectLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/ArmorCard/HBox/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "+0 Redução Direta de Dano"
-
-[node name="ArmLevelLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/ArmorCard/HBox"]
-custom_minimum_size = Vector2(70, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "Nível 0"
-horizontal_alignment = 1
-
-[node name="ArmBuyButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer/UpgradesList/ArmorCard/HBox"]
-custom_minimum_size = Vector2(130, 34)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-text = "Melhorar (🪙 40)"
 
 [node name="HSeparator2" type="HSeparator" parent="CenterContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2

@@ -2,6 +2,7 @@ extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
 const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
+const DUST_EFFECT_SCENE: PackedScene = preload("res://scenes/dust_effect.tscn")
 
 ## Unidade Móvel Aliada: Guerreiro da Linha de Frente.
 ## Participa do esquadrão do Rei, forma círculo defensivo e combate inimigos corpo a corpo.
@@ -187,6 +188,12 @@ func _physics_process(delta: float) -> void:
 	var king := get_tree().get_first_node_in_group("player") as CharacterBody2D
 	var dist_to_king: float = global_position.distance_to(king.global_position) if is_instance_valid(king) else 0.0
 
+	# Sistema Anti-Travamento: se ficar muito distante do player (ou travado tentando andar), teleporte com fumaça Dust_02.png
+	if is_instance_valid(king):
+		if dist_to_king > 480.0 or (_stuck_timer >= 3.0 and dist_to_king > 180.0):
+			_teleport_to_formation(king)
+			return
+
 	var is_low_health: bool = (current_health < int(round(float(max_health) * 0.25)))
 	var king_too_far: bool = is_instance_valid(king) and (dist_to_king > 280.0)
 
@@ -267,7 +274,21 @@ func _physics_process(delta: float) -> void:
 
 	_update_stuck_detector(delta, _is_trying_to_move)
 
-func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = false) -> void:
+## Efeito de fumaça usando a textura Dust_02.png (animação dust_2)
+func _spawn_dust_02(pos: Vector2) -> void:
+	if not DUST_EFFECT_SCENE or not is_inside_tree():
+		return
+	var dust := DUST_EFFECT_SCENE.instantiate() as Node2D
+	dust.global_position = pos
+	dust.scale = Vector2(1.5, 1.5)
+	if dust.has_method("setup_dust_2"):
+		dust.setup_dust_2()
+	var parent_node := get_parent()
+	if parent_node:
+		parent_node.call_deferred("add_child", dust)
+
+## Retorna a posição ideal de formação da unidade em torno do Rei
+func _get_formation_position(king: CharacterBody2D) -> Vector2:
 	var allies := get_tree().get_nodes_in_group("allies_melee")
 	var valid_allies: Array[Node2D] = []
 	for a in allies:
@@ -279,10 +300,34 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 		my_idx = 0
 
 	var total_melee: int = maxi(1, valid_allies.size())
-	# Círculo externo mais distante do Rei para tropas Melee (Warrior e Lancer)
 	var radius: float = 135.0 + (float(total_melee) * 10.0)
 	var angle: float = float(my_idx) * (TAU / float(total_melee))
-	var formation_pos: Vector2 = king.global_position + Vector2(cos(angle), sin(angle)) * radius
+	return king.global_position + Vector2(cos(angle), sin(angle)) * radius
+
+## Sistema Anti-Travamento: Teleporta o guerreiro de volta para a formação com fumaça Dust_02.png
+func _teleport_to_formation(king: CharacterBody2D) -> void:
+	var target_pos := _get_formation_position(king)
+
+	# Fumaça Dust_02.png na posição atual para sumir
+	_spawn_dust_02(global_position)
+
+	# Teleporte instantâneo
+	global_position = target_pos
+	velocity = Vector2.ZERO
+
+	# Fumaça Dust_02.png na posição de destino para aparecer
+	_spawn_dust_02(global_position)
+
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = false
+	_bypass_timer = 0.0
+	_bypass_direction = Vector2.ZERO
+	_stuck_check_pos = global_position
+	target_enemy = null
+
+func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = false) -> void:
+	var formation_pos: Vector2 = _get_formation_position(king)
 
 	var dist_to_pos: float = global_position.distance_to(formation_pos)
 

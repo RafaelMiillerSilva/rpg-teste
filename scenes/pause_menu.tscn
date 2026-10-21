@@ -189,29 +189,29 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 
-[node name="VolumeContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
+[node name="MasterVolumeContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="HeaderContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/VolumeContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/MasterVolumeContainer"]
 layout_mode = 2
 
-[node name="VolumeTitleLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/VolumeContainer/HeaderContainer"]
+[node name="MasterTitleLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/MasterVolumeContainer/HeaderContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.92, 0.96, 1)
-theme_override_font_sizes/font_size = 15
-text = "Volume dos Sons"
+theme_override_font_sizes/font_size = 14
+text = "Volume Geral"
 
-[node name="VolumeValueLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/VolumeContainer/HeaderContainer"]
+[node name="MasterVolumeValueLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/MasterVolumeContainer/HeaderContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 text = "80%"
 horizontal_alignment = 2
 
-[node name="VolumeSlider" type="HSlider" parent="CenterContainer/PanelContainer/VBoxContainer/VolumeContainer"]
-custom_minimum_size = Vector2(280, 24)
+[node name="MasterVolumeSlider" type="HSlider" parent="CenterContainer/PanelContainer/VBoxContainer/MasterVolumeContainer"]
+custom_minimum_size = Vector2(280, 20)
 layout_mode = 2
 theme_override_styles/slider = SubResource("StyleBoxFlat_slider_bg")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_fill")
@@ -220,6 +220,84 @@ min_value = 0.0
 max_value = 100.0
 step = 1.0
 value = 80.0
+
+[node name="SfxVolumeContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/SfxVolumeContainer"]
+layout_mode = 2
+
+[node name="SfxTitleLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/SfxVolumeContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.92, 0.96, 1)
+theme_override_font_sizes/font_size = 14
+text = "Efeitos Sonoros"
+
+[node name="SfxVolumeValueLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/SfxVolumeContainer/HeaderContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "80%"
+horizontal_alignment = 2
+
+[node name="SfxVolumeSlider" type="HSlider" parent="CenterContainer/PanelContainer/VBoxContainer/SfxVolumeContainer"]
+custom_minimum_size = Vector2(280, 20)
+layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_bg")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_fill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_slider_fill")
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 80.0
+
+[node name="MusicVolumeContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer/MusicVolumeContainer"]
+layout_mode = 2
+
+[node name="MusicTitleLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/MusicVolumeContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.92, 0.96, 1)
+theme_override_font_sizes/font_size = 14
+text = "Música"
+
+[node name="MusicVolumeValueLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer/MusicVolumeContainer/HeaderContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "80%"
+horizontal_alignment = 2
+
+[node name="MusicVolumeSlider" type="HSlider" parent="CenterContainer/PanelContainer/VBoxContainer/MusicVolumeContainer"]
+custom_minimum_size = Vector2(280, 20)
+layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_bg")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_fill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_slider_fill")
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 80.0
+
+[node name="AutoAttackContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 0
+
+[node name="AutoAttackCheckBox" type="CheckBox" parent="CenterContainer/PanelContainer/VBoxContainer/AutoAttackContainer"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+focus_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.98, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.65, 1)
+theme_override_font_sizes/font_size = 15
+text = " Auto Ataque (Golpear no alcance)"
 
 [node name="SpacerMid" type="Control" parent="CenterContainer/PanelContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 6)

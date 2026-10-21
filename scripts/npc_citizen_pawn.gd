@@ -40,6 +40,7 @@ const CITIZEN_NAMES: Dictionary = {
 }
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("citizens")
 	add_to_group("npcs")
 	collision_layer = 0
@@ -56,10 +57,8 @@ func _ready() -> void:
 		interaction_label.visible = false
 
 	if interaction_area:
-		interaction_area.collision_layer = 0
-		interaction_area.collision_mask = 1
-		interaction_area.body_entered.connect(_on_body_entered)
-		interaction_area.body_exited.connect(_on_body_exited)
+		interaction_area.monitoring = false
+		interaction_area.monitorable = false
 
 func _update_sprite_variant() -> void:
 	if animated_sprite and animated_sprite.sprite_frames:
@@ -71,44 +70,20 @@ func take_damage(_amount: int = 0, _knockback: Vector2 = Vector2.ZERO, _attacker
 	# Cidadãos são pacíficos e não sofrem dano
 	pass
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_player_in_range:
-		return
-
-	var dialogue_box := get_tree().get_first_node_in_group("dialogue_box")
-	if dialogue_box and dialogue_box.get("is_active"):
-		return
-
-	var pressed := false
-	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
-		pressed = true
-	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
-		pressed = true
-
-	if pressed:
-		get_viewport().set_input_as_handled()
-		_talk()
+func _unhandled_input(_event: InputEvent) -> void:
+	# Diálogo desativado por enquanto (compra de tropas feita exclusivamente nas construções)
+	return
 
 func _talk() -> void:
-	var dialogue_box := get_tree().get_first_node_in_group("dialogue_box")
-	if not dialogue_box or not dialogue_box.has_method("start_dialogue"):
-		return
+	# Diálogo desativado por enquanto (compra de tropas feita exclusivamente nas construções)
+	return
 
+func _on_body_entered(_body: Node2D) -> void:
+	is_player_in_range = false
 	if interaction_label:
 		interaction_label.visible = false
 
-	var quote: String = CITIZEN_DIALOGUES.get(variant, "Vida longa ao Rei!")
-	var text: String = "\"%s\"" % quote
-	dialogue_box.start_dialogue([text], citizen_name)
-
-func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group("player"):
-		is_player_in_range = true
-		if interaction_label:
-			interaction_label.visible = true
-
-func _on_body_exited(body: Node2D) -> void:
-	if body.is_in_group("player"):
-		is_player_in_range = false
-		if interaction_label:
-			interaction_label.visible = false
+func _on_body_exited(_body: Node2D) -> void:
+	is_player_in_range = false
+	if interaction_label:
+		interaction_label.visible = false

@@ -16,11 +16,18 @@ const SHOOT_COOLDOWN: float = 2.0
 var _shoot_timer: float = 1.0 # Primeiro disparo após 1.0s de posicionamento
 
 func _init() -> void:
-	base_max_health = 22
+	base_max_health = 100
+	max_health = 100
+	current_health = 100
 	base_speed = 95.0
-	base_damage = 35
+	base_damage = 40
 	base_armor = 0
 	goblin_type_name = "mage"
+
+func _ready() -> void:
+	super._ready()
+	if animated_sprite:
+		animated_sprite.scale = Vector2(1.4, 1.4)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:

@@ -51,6 +51,9 @@ var _save_tween: Tween
 var _banner_tween: Tween
 
 func _ready() -> void:
+	if not auto_load_save_on_start:
+		UpgradeManager.reset_upgrades()
+
 	_setup_tilemap_floor()
 
 	# Configura o WaveManager
@@ -177,11 +180,33 @@ func _on_level_victory() -> void:
 
 	_show_banner("👑 VITÓRIA! O REI GOBLIN FOI DERROTADO! 👑", Color(1.0, 0.9, 0.3, 1.0))
 
-	# Aguarda 2 segundos para o jogador ver a comemoração e abre a Tela de Vitória
-	var victory_timer := get_tree().create_timer(2.0, false)
-	victory_timer.timeout.connect(func():
-		get_tree().change_scene_to_file("res://scenes/victory_screen.tscn")
-	)
+	# Aguarda exatamente 5 segundos após a animação de morte do boss e exibe a tela de vitória dentro da partida sem pausar o jogo
+	var victory_timer := get_tree().create_timer(5.0, false)
+	victory_timer.timeout.connect(_show_in_game_victory_screen)
+
+func _show_in_game_victory_screen() -> void:
+	if not is_inside_tree():
+		return
+
+	# Não pausa o jogo (semelhante ao menu de pause, mas o jogo continua rodando ativamente ao fundo)
+	var victory_canvas := CanvasLayer.new()
+	victory_canvas.name = "InGameVictoryOverlay"
+	victory_canvas.layer = 25
+	victory_canvas.process_mode = Node.PROCESS_MODE_ALWAYS
+
+	var victory_scene := load("res://scenes/victory_screen.tscn") as PackedScene
+	if not victory_scene:
+		return
+
+	var victory_instance := victory_scene.instantiate() as Control
+	if "is_in_game_overlay" in victory_instance:
+		victory_instance.is_in_game_overlay = true
+	var wp = victory_instance.get_node_or_null("Wallpaper")
+	if wp:
+		wp.visible = false
+
+	victory_canvas.add_child(victory_instance)
+	add_child(victory_canvas)
 
 ## Inicia o próximo turno através do WaveManager
 func start_next_turn() -> void:

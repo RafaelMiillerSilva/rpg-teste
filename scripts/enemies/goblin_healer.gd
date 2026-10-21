@@ -1,22 +1,24 @@
 extends GoblinBase
 
 ## Goblin Healer (Curandeiro):
-## Fica na retaguarda recuada (mantém distância mínima de 300px dos heróis).
-## A cada 5 segundos, busca até 5 goblins feridos e cura 15 de vida em cada um.
-## Prioridade de cura: Giant > Warrior > Range > Normal.
+## Foca em buscar e acompanhar os aliados mais fortes pelo mapa (Rei, Gigante, Mago, Guerreiro),
+## mantendo-se na retaguarda deles para curá-los continuamente e desviando ativamente do
+## Rei e de seus cavaleiros/tropas aliadas.
 
-const MIN_HERO_DISTANCE: float = 220.0
-const MAX_BATTLE_DISTANCE: float = 360.0
-const HEAL_RANGE: float = 220.0
+const DANGER_RADIUS: float = 240.0
+const ALLY_PREFERRED_MIN_DIST: float = 90.0
+const ALLY_PREFERRED_MAX_DIST: float = 170.0
+const HEAL_RANGE: float = 240.0
 const HEAL_COOLDOWN: float = 5.0
-const HEAL_AMOUNT: int = 15
+const HEAL_AMOUNT: int = 18
 
-var _heal_timer: float = 3.0 # Primeiro ciclo de cura após 3.0s
+var _heal_timer: float = 2.0
 var is_healing: bool = false
+var focus_ally: GoblinBase = null
 
 func _init() -> void:
-	base_max_health = 40
-	base_speed = 76.0
+	base_max_health = 45
+	base_speed = 88.0
 	base_damage = 5
 	goblin_type_name = "healer"
 
@@ -24,83 +26,126 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
-	# Não permite andar enquanto estiver executando a animação de cura
 	if is_healing:
 		velocity = Vector2.ZERO
 		return
 
-
 	update_avoidance_timer(delta)
-
-
 	_heal_timer -= delta
 
-	# 1. Manter distância de segurança dos heróis (Player ou Aliados)
-	var hero_threat := _find_closest_hero()
-	if is_instance_valid(hero_threat):
-		var dist := global_position.distance_to(hero_threat.global_position)
-		var dir := (hero_threat.global_position - global_position).normalized()
-		var smart_dir := calculate_smart_direction(hero_threat.global_position)
+	# 1. Encontra o aliado mais forte / prioritário para focar
+	if not is_instance_valid(focus_ally) or focus_ally.is_dead:
+		focus_ally = _find_strongest_goblin_ally()
 
-		if dist < MIN_HERO_DISTANCE:
-			# Muito perto: foge na direção oposta e olha para onde está correndo (sem andar de costas)
-			velocity = velocity.move_toward(-dir * speed, 500.0 * delta)
-			move_and_slide()
-			if animated_sprite:
-				if animated_sprite.animation != "run":
-					animated_sprite.play("run")
-				animated_sprite.speed_scale = speed / base_speed
-				if abs(-dir.x) > 0.05:
-					animated_sprite.flip_h = -dir.x < 0.0
-		elif dist > MAX_BATTLE_DISTANCE:
-			# Muito longe da batalha: aproxima-se com cautela contornando obstáculos
-			apply_smart_movement(smart_dir, delta, speed * 0.7)
-			if animated_sprite:
-				if animated_sprite.animation != "run":
-					animated_sprite.play("run")
-				animated_sprite.speed_scale = speed / base_speed
-				if abs(smart_dir.x) > 0.05:
-					animated_sprite.flip_h = smart_dir.x < 0.0
-		else:
-			velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
-			move_and_slide()
-			if animated_sprite:
-				animated_sprite.speed_scale = 1.0
-				if animated_sprite.animation != "idle" and animated_sprite.animation != "heal":
-					animated_sprite.play("idle")
-				if abs(dir.x) > 0.05:
-					animated_sprite.flip_h = dir.x < 0.0
+	# 2. Calcula vetor de desvio do jogador e de seus cavaleiros/aliados
+	var repulsion_from_heroes := _calculate_heroes_repulsion()
+
+	# 3. Determina vetor de movimentação em direção ao aliado focado
+	var dir_to_ally := Vector2.ZERO
+	if is_instance_valid(focus_ally):
+		var dist_ally := global_position.distance_to(focus_ally.global_position)
+		if dist_ally > ALLY_PREFERRED_MAX_DIST:
+			dir_to_ally = calculate_smart_direction(focus_ally.global_position)
+		elif dist_ally < ALLY_PREFERRED_MIN_DIST:
+			dir_to_ally = (global_position - focus_ally.global_position).normalized()
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, 400.0 * delta)
-		move_and_slide()
-		if animated_sprite:
-			animated_sprite.speed_scale = 1.0
+		focus_ally = _find_strongest_goblin_ally()
 
-	# 2. Ciclo de cura a cada 5 segundos para aliados no raio de alcance
+	# 4. Combina navegação: segue o aliado mais forte, mas desvia com alta prioridade se houver heróis por perto
+	var move_speed: float = speed
+	if repulsion_from_heroes != Vector2.ZERO:
+		# Em perigo: desvia ativamente dos cavaleiros/player contornando-os em direção ao aliado
+		var blended_dir := (dir_to_ally * 0.35 + repulsion_from_heroes * 0.85).normalized()
+		apply_smart_movement(blended_dir, delta, move_speed * 1.15)
+		if animated_sprite and animated_sprite.animation != "run":
+			animated_sprite.play("run")
+		if animated_sprite and abs(blended_dir.x) > 0.05:
+			animated_sprite.flip_h = blended_dir.x < 0.0
+	elif dir_to_ally != Vector2.ZERO:
+		# Caminha pelo mapa acompanhando o aliado forte
+		apply_smart_movement(dir_to_ally, delta, move_speed)
+		if animated_sprite and animated_sprite.animation != "run":
+			animated_sprite.play("run")
+		if animated_sprite and abs(dir_to_ally.x) > 0.05:
+			animated_sprite.flip_h = dir_to_ally.x < 0.0
+	else:
+		# Posicionado com segurança atrás do aliado
+		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
+		move_and_slide()
+		_update_stuck_detector(delta, false)
+		if animated_sprite and animated_sprite.animation != "idle" and animated_sprite.animation != "heal":
+			animated_sprite.play("idle")
+
+	# 5. Ciclo de cura a cada 5 segundos para aliados no raio de alcance
 	if _heal_timer <= 0.0:
 		_heal_timer = HEAL_COOLDOWN
 		_perform_healing_wave()
 
-func _find_closest_hero() -> Node2D:
+## Encontra o aliado goblin mais forte do mapa para acompanhar e priorizar a cura
+func _find_strongest_goblin_ally() -> GoblinBase:
 	if not is_inside_tree() or not get_tree():
 		return null
+
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var best_ally: GoblinBase = null
+	var best_score: float = -999999.0
+
+	var strength_weights = {
+		"king": 150.0,
+		"giant": 100.0,
+		"mage": 75.0,
+		"warrior": 50.0,
+		"range": 25.0,
+		"normal": 10.0,
+		"healer": 0.0
+	}
+
+	for e in enemies:
+		if not is_instance_valid(e) or e == self or not (e is GoblinBase) or e.is_dead:
+			continue
+
+		var goblin := e as GoblinBase
+		var weight: float = strength_weights.get(goblin.goblin_type_name, 10.0)
+		var dist: float = global_position.distance_to(goblin.global_position)
+
+		# Pontuação baseada no peso do tipo de goblin
+		var score: float = weight * 100.0 - (dist * 0.15)
+
+		# Bônus muito alto se o aliado estiver ferido (necessitando de socorro médico)
+		if goblin.current_health < goblin.max_health:
+			var missing_pct: float = 1.0 - (float(goblin.current_health) / float(maxi(1, goblin.max_health)))
+			score += 350.0 + (missing_pct * 300.0)
+
+		if score > best_score:
+			best_score = score
+			best_ally = goblin
+
+	return best_ally
+
+## Calcula força de repulsão combinada contra o jogador e seus guerreiros/aliados próximos
+func _calculate_heroes_repulsion() -> Vector2:
+	if not is_inside_tree() or not get_tree():
+		return Vector2.ZERO
+
 	var heroes: Array[Node2D] = []
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if is_instance_valid(player) and not ("is_dead" in player and player.is_dead):
 		heroes.append(player)
+
 	var allies := get_tree().get_nodes_in_group("allies")
 	for ally in allies:
 		if is_instance_valid(ally) and not ("is_dead" in ally and ally.is_dead):
 			heroes.append(ally as Node2D)
 
-	var closest: Node2D = null
-	var min_d := 999999.0
-	for h in heroes:
-		var d := global_position.distance_to(h.global_position)
-		if d < min_d:
-			min_d = d
-			closest = h
-	return closest
+	var total_repulsion := Vector2.ZERO
+	for hero in heroes:
+		var dist := global_position.distance_to(hero.global_position)
+		if dist < DANGER_RADIUS:
+			var force: float = 1.0 - (dist / DANGER_RADIUS)
+			var dir := (global_position - hero.global_position).normalized()
+			total_repulsion += dir * force
+
+	return total_repulsion.normalized() if total_repulsion != Vector2.ZERO else Vector2.ZERO
 
 func _perform_healing_wave() -> void:
 	var enemies := get_tree().get_nodes_in_group("enemies")
@@ -115,27 +160,27 @@ func _perform_healing_wave() -> void:
 	if injured.is_empty():
 		return
 
-	# Prioridade de cura oficial: Giant > Warrior > Range > Normal > Healer
+	# Prioridade de cura oficial: King > Giant > Mage > Warrior > Range > Normal > Healer
 	var priority_order = {
+		"king": 6,
 		"giant": 5,
-		"warrior": 4,
-		"range": 3,
-		"normal": 2,
-		"healer": 1
+		"mage": 4,
+		"warrior": 3,
+		"range": 2,
+		"normal": 1,
+		"healer": 0
 	}
 
 	injured.sort_custom(func(a: GoblinBase, b: GoblinBase) -> bool:
 		var p_a: int = priority_order.get(a.goblin_type_name, 0)
 		var p_b: int = priority_order.get(b.goblin_type_name, 0)
 		if p_a != p_b:
-			return p_a > p_b # Maior prioridade primeiro
-		# Em caso de empate, cura o que tiver menor percentual de vida
+			return p_a > p_b # Maior força/hierarquia primeiro
 		var pct_a: float = float(a.current_health) / float(maxi(1, a.max_health))
 		var pct_b: float = float(b.current_health) / float(maxi(1, b.max_health))
 		return pct_a < pct_b
 	)
 
-	# Cura até 5 goblins feridos
 	var targets_to_heal = injured.slice(0, 5)
 	if targets_to_heal.is_empty():
 		return
@@ -160,11 +205,9 @@ func _on_animation_finished() -> void:
 	else:
 		super._on_animation_finished()
 
-
 func _spawn_heal_effect(target: Node2D) -> void:
 	if not is_inside_tree() or not is_instance_valid(target):
 		return
-	# Efeito visual de brilho de cura sobre o goblin
 	var effect := Sprite2D.new()
 	effect.texture = preload("res://assets/tiny_swords/Units/Blue Units/Monk/Heal_Effect.png")
 	effect.hframes = 11

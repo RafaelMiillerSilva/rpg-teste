@@ -17,10 +17,6 @@
 [ext_resource type="PackedScene" path="res://scenes/npc_archer.tscn" id="17_npc_archer"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="18_pause_menu"]
 [ext_resource type="PackedScene" path="res://scenes/sheep.tscn" id="19_sheep_scene"]
-[ext_resource type="Texture2D" uid="uid://b23m0ao7c44fn" path="res://assets/tiny_swords/Terrain/Decorations/Bushes/Bushe1.png" id="20_bushe1_tex"]
-[ext_resource type="Texture2D" uid="uid://c7x6qdpufy7nd" path="res://assets/tiny_swords/Terrain/Decorations/Bushes/Bushe2.png" id="21_bushe2_tex"]
-[ext_resource type="Texture2D" uid="uid://br0l3xs5onldm" path="res://assets/tiny_swords/Terrain/Decorations/Bushes/Bushe3.png" id="22_bushe3_tex"]
-[ext_resource type="Texture2D" uid="uid://b5u86cmhd82l8" path="res://assets/tiny_swords/Terrain/Decorations/Bushes/Bushe4.png" id="23_bushe4_tex"]
 [ext_resource type="Texture2D" uid="uid://dvp0d5g4vbdqf" path="res://assets/tiny_swords/Terrain/Decorations/Rocks/Rock1.png" id="24_rock1_tex"]
 [ext_resource type="Texture2D" uid="uid://d02xdf54lxurf" path="res://assets/tiny_swords/Terrain/Decorations/Rocks/Rock2.png" id="25_rock2_tex"]
 [ext_resource type="Texture2D" uid="uid://d1huq7y2qkbmk" path="res://assets/tiny_swords/Terrain/Decorations/Rocks/Rock3.png" id="26_rock3_tex"]
@@ -29,14 +25,13 @@
 [ext_resource type="Texture2D" uid="uid://oc8k04c1qt8l" path="res://assets/tiny_swords/Terrain/Resources/Wood/Trees/Stump 2.png" id="29_stump2_tex"]
 [ext_resource type="PackedScene" path="res://scenes/npc_warrior.tscn" id="30_npc_warrior"]
 [ext_resource type="PackedScene" path="res://scenes/npc_lancer.tscn" id="31_npc_lancer"]
-[ext_resource type="Script" path="res://scripts/building_upgrade_area.gd" id="32_upgrade_area_script"]
+[ext_resource type="Script" uid="uid://mqo43i1ppsf2" path="res://scripts/building_upgrade_area.gd" id="32_upgrade_area_script"]
 [ext_resource type="PackedScene" path="res://scenes/upgrade_menu.tscn" id="33_upgrade_menu"]
 [ext_resource type="PackedScene" path="res://scenes/minimap.tscn" id="34_minimap"]
-[ext_resource type="PackedScene" path="res://scenes/pawn_gold.tscn" id="35_pawn_gold"]
 [ext_resource type="PackedScene" path="res://scenes/npc_citizen_pawn.tscn" id="36_npc_citizen_pawn"]
-[ext_resource type="PackedScene" path="res://scenes/npc_pawn.tscn" id="37_npc_pawn"]
+[ext_resource type="PackedScene" uid="uid://c3eaa1m8y0pwn" path="res://scenes/npc_pawn.tscn" id="37_npc_pawn"]
 [ext_resource type="PackedScene" path="res://scenes/bush.tscn" id="38_bush_scene"]
-[ext_resource type="PackedScene" path="res://scenes/troop_roster_ui.tscn" id="39_troop_roster_ui"]
+[ext_resource type="PackedScene" uid="uid://dfrosterui001" path="res://scenes/troop_roster_ui.tscn" id="39_troop_roster_ui"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grass"]
 texture = ExtResource("8_tilemap_tex")
@@ -72,7 +67,7 @@ size = Vector2(140, 70)
 size = Vector2(150, 65)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_archery"]
-size = Vector2(152, 133)
+size = Vector2(160, 131)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_tower"]
 size = Vector2(75, 45)
@@ -326,7 +321,6 @@ shape = SubResource("RectangleShape2D_castle")
 position = Vector2(0, 10)
 collision_layer = 0
 script = ExtResource("32_upgrade_area_script")
-building_type = "castle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/Castle/UpgradeArea" unique_id=325263284]
 shape = SubResource("CircleShape2D_upgrade")
@@ -424,7 +418,7 @@ texture = ExtResource("12_archery_tex")
 offset = Vector2(0, -115)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/Archery" unique_id=1325956170]
-position = Vector2(-6, -66.5)
+position = Vector2(-10, -67.5)
 shape = SubResource("RectangleShape2D_archery")
 
 [node name="UpgradeArea" type="Area2D" parent="Buildings/Archery" unique_id=1344804361]
@@ -621,58 +615,58 @@ offset = Vector2(0, -85)
 position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_house")
 
-[node name="House6" type="StaticBody2D" parent="Buildings"]
+[node name="House6" type="StaticBody2D" parent="Buildings" unique_id=1683132958]
 texture_filter = 1
 position = Vector2(3500, 3700)
 collision_mask = 0
 
-[node name="Sprite2D" type="Sprite2D" parent="Buildings/House6"]
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/House6" unique_id=453647392]
 texture_filter = 1
 texture = ExtResource("14_house1_tex")
 offset = Vector2(0, -85)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House6"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House6" unique_id=540265109]
 position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_house")
 
-[node name="House7" type="StaticBody2D" parent="Buildings"]
+[node name="House7" type="StaticBody2D" parent="Buildings" unique_id=501962111]
 texture_filter = 1
 position = Vector2(4100, 3700)
 collision_mask = 0
 
-[node name="Sprite2D" type="Sprite2D" parent="Buildings/House7"]
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/House7" unique_id=1792919488]
 texture_filter = 1
 texture = ExtResource("15_house2_tex")
 offset = Vector2(0, -85)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House7"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House7" unique_id=1235616466]
 position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_house")
 
-[node name="House8" type="StaticBody2D" parent="Buildings"]
+[node name="House8" type="StaticBody2D" parent="Buildings" unique_id=1648647768]
 texture_filter = 1
 position = Vector2(4500, 3700)
 collision_mask = 0
 
-[node name="Sprite2D" type="Sprite2D" parent="Buildings/House8"]
+[node name="Sprite2D" type="Sprite2D" parent="Buildings/House8" unique_id=78586068]
 texture_filter = 1
 texture = ExtResource("16_house3_tex")
 offset = Vector2(0, -85)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House8"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House8" unique_id=1652007714]
 position = Vector2(0, -22)
 shape = SubResource("RectangleShape2D_house")
 
-[node name="UpgradeArea" type="Area2D" parent="Buildings/House8"]
+[node name="UpgradeArea" type="Area2D" parent="Buildings/House8" unique_id=1683282270]
 position = Vector2(0, 10)
 collision_layer = 0
 script = ExtResource("32_upgrade_area_script")
 building_type = "pawn_house"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House8/UpgradeArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/House8/UpgradeArea" unique_id=660969616]
 shape = SubResource("CircleShape2D_upgrade")
 
-[node name="InteractionLabel" type="Label" parent="Buildings/House8/UpgradeArea"]
+[node name="InteractionLabel" type="Label" parent="Buildings/House8/UpgradeArea" unique_id=1118509447]
 visible = false
 offset_left = -70.0
 offset_top = -65.0
@@ -6145,7 +6139,7 @@ offset_bottom = 96.0
 grow_horizontal = 2
 theme_override_constants/separation = 4
 
-[node name="BossTitleLabel" type="Label" parent="CanvasLayer/BossBarContainer"]
+[node name="BossTitleLabel" type="Label" parent="CanvasLayer/BossBarContainer" unique_id=547896677]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
@@ -6157,7 +6151,7 @@ theme_override_font_sizes/font_size = 14
 text = "👑 REI GOBLIN - CHEFE FINAL 👑"
 horizontal_alignment = 1
 
-[node name="BossProgressBar" type="ProgressBar" parent="CanvasLayer/BossBarContainer"]
+[node name="BossProgressBar" type="ProgressBar" parent="CanvasLayer/BossBarContainer" unique_id=1209516219]
 custom_minimum_size = Vector2(440, 20)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_boss_bg")
@@ -6166,7 +6160,7 @@ max_value = 1800.0
 value = 1800.0
 show_percentage = false
 
-[node name="BossHealthText" type="Label" parent="CanvasLayer/BossBarContainer/BossProgressBar"]
+[node name="BossHealthText" type="Label" parent="CanvasLayer/BossBarContainer/BossProgressBar" unique_id=564750293]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -6221,7 +6215,7 @@ text = "TURNO 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Minimap" parent="CanvasLayer" instance=ExtResource("34_minimap")]
+[node name="Minimap" parent="CanvasLayer" unique_id=95792333 instance=ExtResource("34_minimap")]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -6231,8 +6225,7 @@ offset_right = -20.0
 offset_bottom = 245.0
 grow_horizontal = 0
 
-[node name="TroopRosterUI" parent="CanvasLayer" instance=ExtResource("39_troop_roster_ui")]
-
+[node name="TroopRosterUI" parent="CanvasLayer" unique_id=1902740892 instance=ExtResource("39_troop_roster_ui")]
 
 [node name="DialogueBox" parent="." unique_id=11056450 instance=ExtResource("5_dialogue_box")]
 
@@ -6240,34 +6233,32 @@ grow_horizontal = 0
 
 [node name="UpgradeMenu" parent="." unique_id=45980686 instance=ExtResource("33_upgrade_menu")]
 
-[node name="NPCCitizen_Axe" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Axe" parent="." unique_id=1661398340 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(3400, 3210)
-variant = "axe"
 
-[node name="NPCCitizen_Hammer" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Hammer" parent="." unique_id=1015363333 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(3700, 3410)
 variant = "hammer"
 
-[node name="NPCCitizen_Knife" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Knife" parent="." unique_id=665293722 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(4300, 3410)
 variant = "knife"
 
-[node name="NPCCitizen_Meat" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Meat" parent="." unique_id=1825779567 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(3300, 3560)
 variant = "meat"
 
-[node name="NPCCitizen_Pickaxe" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Pickaxe" parent="." unique_id=1709647959 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(4700, 3560)
 variant = "pickaxe"
 
-[node name="NPCCitizen_Wood" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Wood" parent="." unique_id=350781835 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(3500, 3760)
 variant = "wood"
 
-[node name="NPCCitizen_Normal" parent="." instance=ExtResource("36_npc_citizen_pawn")]
+[node name="NPCCitizen_Normal" parent="." unique_id=775969026 instance=ExtResource("36_npc_citizen_pawn")]
 position = Vector2(4100, 3760)
 variant = "normal"
 
-[node name="NPCPawn" parent="." instance=ExtResource("37_npc_pawn")]
+[node name="NPCPawn" parent="." unique_id=1133873771 instance=ExtResource("37_npc_pawn")]
 position = Vector2(4500, 3760)
-

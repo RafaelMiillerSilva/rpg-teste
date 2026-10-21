@@ -1,3 +1,4 @@
+class_name Player
 extends CharacterBody2D
 
 const UpgradeManager = preload("res://scripts/upgrade_manager.gd")
@@ -38,6 +39,12 @@ const SAVE_FILE_PATH: String = "user://savegame.json"
 ## Controla se o jogador pode se mover e atacar (congelado durante diálogos).
 var can_move: bool = true
 
+## Configuração de Auto-Ataque do Rei (ativado/desativado no menu de pause)
+static var auto_attack_enabled: bool = false
+
+## Alcance efetivo de ataque do Rei com aumento de 15% (100.0 * 1.15 = 115.0 px)
+const ATTACK_RANGE: float = 115.0
+
 ## Vida atual do jogador.
 var current_health: int = 100
 
@@ -54,6 +61,9 @@ var _stun_effect_instance: Node2D = null
 
 ## Tempo de invulnerabilidade breve para evitar dano por múltiplos frames.
 var is_invulnerable: bool = false
+
+## Temporizador failsafe de ataque para garantir que o Rei nunca fique com animação travada
+var _attack_duration_timer: float = 0.0
 
 ## Controle de tremor de tela (screen shake)
 var _shake_tween: Tween
@@ -108,8 +118,23 @@ func _ready() -> void:
 	coins_changed.emit(coins)
 	potions_changed.emit(potions)
 	armor_changed.emit(get_total_armor())
+	_load_auto_attack_setting()
 
 func _physics_process(delta: float) -> void:
+	# Failsafe do ataque: se o timer zerar ou o sprite divergir, recupera a animação do Rei
+	if is_attacking:
+		_attack_duration_timer -= delta
+		if _attack_duration_timer <= 0.0:
+			_force_finish_attack()
+		elif animated_sprite and animated_sprite.animation != "attack":
+			_force_finish_attack()
+	elif animated_sprite and animated_sprite.animation == "attack":
+		if velocity.length() > 20.0:
+			animated_sprite.play("walk")
+		else:
+			animated_sprite.play("idle")
+		_update_sprite_offset()
+
 	if _potion_cooldown > 0.0:
 		_potion_cooldown -= delta
 
@@ -173,9 +198,14 @@ func _physics_process(delta: float) -> void:
 				animated_sprite.play("idle")
 				_update_sprite_offset()
 
+	# Auto-ataque: se marcado, o rei ataca sozinho quando tem inimigos no alcance
+	if auto_attack_enabled and not is_attacking and can_move and not is_stunned and not _is_in_menu_or_dialogue():
+		_check_auto_attack()
+
 	# Acionamento do ataque por Espaço (ui_select / attack)
 	if Input.is_action_just_pressed("attack") or Input.is_action_just_pressed("ui_select"):
-		attack()
+		if can_move and not is_stunned and not _is_in_menu_or_dialogue():
+			attack()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -184,7 +214,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_F7:
 			load_game()
 
-	if not can_move or is_stunned:
+	if not can_move or is_stunned or _is_in_menu_or_dialogue():
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var mouse_dir: Vector2 = (get_global_mouse_position() - global_position).normalized()
@@ -215,17 +245,67 @@ func screen_shake(duration: float = 0.2, strength: float = 7.0) -> void:
 		_shake_tween.tween_property(camera, "offset", offset_rand, step_time)
 	_shake_tween.tween_property(camera, "offset", Vector2.ZERO, 0.04)
 
-## Congela movimentação e ações do jogador (chamado por diálogos/cutscenes)
-func freeze() -> void:
+## Congela movimentação e ações do jogador (chamado por lojas, diálogos e cutscenes)
+func freeze_player() -> void:
 	can_move = false
 	velocity = Vector2.ZERO
+	if is_attacking:
+		_force_finish_attack()
+	else:
+		is_attacking = false
+		_deactivate_staff_hitbox()
+		_attack_duration_timer = 0.0
+	is_invulnerable = true
 	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
 		animated_sprite.play("idle")
 		_update_sprite_offset()
 
 ## Descongela movimentação e ações do jogador
-func unfreeze() -> void:
+func unfreeze_player() -> void:
 	can_move = true
+	is_attacking = false
+	_deactivate_staff_hitbox()
+	_attack_duration_timer = 0.0
+	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
+		if velocity.length() > 20.0:
+			animated_sprite.play("walk")
+		else:
+			animated_sprite.play("idle")
+		_update_sprite_offset()
+	grant_invulnerability_grace(0.5)
+
+## Aliases de compatibilidade
+func freeze() -> void:
+	freeze_player()
+
+func unfreeze() -> void:
+	unfreeze_player()
+
+## Concede carência temporária de invulnerabilidade ao sair de menus ou diálogos
+func grant_invulnerability_grace(duration: float = 0.5) -> void:
+	is_invulnerable = true
+	if is_inside_tree() and get_tree():
+		var timer := get_tree().create_timer(duration, false, false, false)
+		timer.timeout.connect(func(): is_invulnerable = false)
+	else:
+		is_invulnerable = false
+
+## Verifica se o jogador está com menu de loja, diálogo ou pausa aberto
+func _is_in_menu_or_dialogue() -> bool:
+	if not is_inside_tree() or not get_tree():
+		return false
+	var upgrade_menu := get_tree().get_first_node_in_group("upgrade_menu")
+	if upgrade_menu and ("is_open" in upgrade_menu and bool(upgrade_menu.is_open)):
+		return true
+	var dialogue_box := get_tree().get_first_node_in_group("dialogue_box")
+	if dialogue_box and ("is_active" in dialogue_box and bool(dialogue_box.is_active)):
+		return true
+	var pause_menu := get_tree().get_first_node_in_group("pause_menu")
+	if pause_menu and ("visible" in pause_menu and bool(pause_menu.visible)):
+		return true
+	return false
 
 ## Aplica efeito de atordoamento (Stun): impede ações e exibe estrelas sobre a cabeça
 func apply_stun(duration: float = 1.0) -> void:
@@ -348,25 +428,27 @@ func load_game() -> void:
 
 ## Executa o ataque mágico com o cajado do Rei Azul
 func attack() -> void:
-	if is_attacking or not can_move or is_stunned:
+	if is_attacking or not can_move or is_stunned or _is_in_menu_or_dialogue():
 		return
 
 	is_attacking = true
 	_current_attack_hit_bodies.clear()
 
+	var cd_mult: float = UpgradeManager.get_attack_cooldown_multiplier()
+	var anim_speed_scale: float = clampf(1.0 / maxf(0.1, cd_mult), 1.0, 3.0)
+	_attack_duration_timer = 0.45 / anim_speed_scale
+
 	# Vira o sprite para a direção do golpe
 	if animated_sprite:
 		if abs(last_direction.x) > 0.01:
 			animated_sprite.flip_h = last_direction.x < 0.0
-		var cd_mult: float = UpgradeManager.get_attack_cooldown_multiplier()
-		var anim_speed_scale: float = clampf(1.0 / maxf(0.1, cd_mult), 1.0, 3.0)
 		animated_sprite.speed_scale = anim_speed_scale
 		animated_sprite.play("attack")
 		_update_sprite_offset()
 
-	# Prepara a posição e ângulo da hitbox mágica do cajado
+	# Prepara a posição e ângulo da hitbox mágica do cajado (alcance aumentado em 15%: 35.0 * 1.15 = 40.25)
 	if sword_hitbox and sword_collision:
-		sword_hitbox.position = last_direction * 35.0 + Vector2(0, 15.0)
+		sword_hitbox.position = last_direction * 40.25 + Vector2(0, 15.0)
 		sword_hitbox.rotation = last_direction.angle()
 		sword_collision.disabled = true
 		sword_hitbox.visible = false
@@ -394,17 +476,22 @@ func _deactivate_staff_hitbox() -> void:
 func _on_attack_hit_window_finished() -> void:
 	_deactivate_staff_hitbox()
 
-func _on_animation_finished() -> void:
-	if animated_sprite and animated_sprite.animation == "attack":
-		_deactivate_staff_hitbox()
-		is_attacking = false
+func _force_finish_attack() -> void:
+	_deactivate_staff_hitbox()
+	is_attacking = false
+	_attack_duration_timer = 0.0
+	_current_attack_hit_bodies.clear()
+	if animated_sprite:
 		animated_sprite.speed_scale = 1.0
-		_current_attack_hit_bodies.clear()
 		if can_move and velocity.length() > 20.0:
 			animated_sprite.play("walk")
 		else:
 			animated_sprite.play("idle")
 		_update_sprite_offset()
+
+func _on_animation_finished() -> void:
+	if animated_sprite and animated_sprite.animation == "attack":
+		_force_finish_attack()
 
 ## Mantém o offset zero já que todos os frames estão padronizados em 192x192 com pés alinhados
 func _update_sprite_offset() -> void:
@@ -428,6 +515,44 @@ func get_total_armor() -> int:
 func get_total_attack_damage() -> int:
 	return attack_damage + UpgradeManager.get_bonus_damage()
 
+## Auto-ataque: busca o inimigo vivo mais próximo dentro do alcance de 115px e golpeia
+func _check_auto_attack() -> void:
+	if not auto_attack_enabled:
+		return
+	if not is_inside_tree() or is_attacking or not can_move or is_stunned or current_health <= 0:
+		return
+	if _is_in_menu_or_dialogue():
+		return
+
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var nearest_enemy: Node2D = null
+	var min_dist: float = ATTACK_RANGE
+
+	for enemy in enemies:
+		if is_instance_valid(enemy) and not ("is_dead" in enemy and enemy.is_dead):
+			var d := global_position.distance_to(enemy.global_position)
+			if d <= min_dist:
+				min_dist = d
+				nearest_enemy = enemy
+
+	if nearest_enemy:
+		var dir := (nearest_enemy.global_position - global_position).normalized()
+		if dir != Vector2.ZERO:
+			last_direction = dir
+		attack()
+
+func _load_auto_attack_setting() -> void:
+	const SETTINGS_FILE: String = "user://audio_settings.json"
+	if FileAccess.file_exists(SETTINGS_FILE):
+		var file := FileAccess.open(SETTINGS_FILE, FileAccess.READ)
+		if file:
+			var content := file.get_as_text()
+			file.close()
+			var json := JSON.new()
+			if json.parse(content) == OK and typeof(json.data) == TYPE_DICTIONARY:
+				if json.data.has("auto_attack"):
+					auto_attack_enabled = bool(json.data["auto_attack"])
+
 func _on_upgrades_changed() -> void:
 	var old_max := max_health
 	max_health = 100 + UpgradeManager.get_bonus_health()
@@ -441,6 +566,12 @@ func _on_upgrades_changed() -> void:
 func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker = null) -> void:
 	if is_invulnerable or current_health <= 0:
 		return
+	if not can_move or _is_in_menu_or_dialogue() or (is_inside_tree() and get_tree() and get_tree().paused):
+		return
+
+	# Cancela qualquer ataque em andamento com segurança para não travar a animação
+	if is_attacking:
+		_force_finish_attack()
 
 	var total_armor := get_total_armor()
 	var final_damage := maxi(1, amount - total_armor)
@@ -467,15 +598,14 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker =
 
 	# Se a vida zerar, transiciona para a tela de Game Over
 	if current_health <= 0:
-		if is_inside_tree():
+		if is_inside_tree() and get_tree():
 			get_tree().call_deferred("change_scene_to_file", "res://scenes/game_over.tscn")
 		return
 
-
 	# Breve invulnerabilidade (0.35s) para o jogador não tomar vários hits imediatos
 	is_invulnerable = true
-	if is_inside_tree():
-		var invul_timer := get_tree().create_timer(0.35)
+	if is_inside_tree() and get_tree():
+		var invul_timer := get_tree().create_timer(0.35, false)
 		invul_timer.timeout.connect(func(): is_invulnerable = false)
 	else:
 		is_invulnerable = false

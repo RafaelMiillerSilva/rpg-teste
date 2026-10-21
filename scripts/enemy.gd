@@ -12,6 +12,14 @@ var gate_position: Vector2 = Vector2.ZERO
 var avoidance_timer: float = 0.0
 var avoidance_direction: Vector2 = Vector2.ZERO
 
+## Sistema Anti-Bugs / Anti-Travamento (Detecção de 5s travado andando sem sair da posição)
+var _stuck_timer: float = 0.0
+var _stuck_check_pos: Vector2 = Vector2.ZERO
+var _stuck_interval_timer: float = 0.0
+var _is_reversing: bool = false
+var _reverse_timer: float = 0.0
+var _reverse_direction: Vector2 = Vector2.ZERO
+
 ## Watchdog para impedir que inimigos fiquem presos ou sumam fora do mapa
 var time_outside: float = 0.0
 
@@ -57,6 +65,7 @@ var target_player: Node2D = null
 
 func _ready() -> void:
 	add_to_group("enemies")
+	_stuck_check_pos = global_position
 	_update_speed()
 	max_health = health
 	if health_bar:
@@ -97,6 +106,22 @@ func _physics_process(delta: float) -> void:
 		avoidance_timer -= delta
 	else:
 		avoidance_direction = Vector2.ZERO
+
+	# Se estiver executando recuo anti-stuck (andando para trás por 1 segundo)
+	if _is_reversing:
+		_reverse_timer -= delta
+		velocity = _reverse_direction * (speed * 0.85)
+		move_and_slide()
+		if animated_sprite and not is_attacking:
+			if animated_sprite.animation != "walk":
+				animated_sprite.play("walk")
+			if abs(_reverse_direction.x) > 0.05:
+				animated_sprite.flip_h = _reverse_direction.x < 0.0
+		if _reverse_timer <= 0.0:
+			_is_reversing = false
+			_apply_route_recalculation()
+		_update_stuck_detector(delta, false)
+		return
 
 	# Garante referência ao alvo válido (ou retorna ao Rei se o alvo tiver morrido)
 	if not is_instance_valid(target_player) or ("is_dead" in target_player and target_player.is_dead):
@@ -187,6 +212,10 @@ func _physics_process(delta: float) -> void:
 
 				avoidance_timer = 0.5
 
+	# Atualiza detector de travamento de 5 segundos
+	var is_trying_to_move: bool = desired_velocity.length() > 20.0 and not is_attacking
+	_update_stuck_detector(delta, is_trying_to_move)
+
 	# Atualiza animação e orientação horizontal apenas quando não estiver atacando
 	if animated_sprite and not is_attacking:
 		var is_moving: bool = velocity.length() > 10.0
@@ -203,6 +232,57 @@ func _physics_process(delta: float) -> void:
 
 	# Verifica se colidiu fisicamente com o jogador durante o deslocamento
 	_check_player_collisions()
+
+## Sistema Anti-Bugs: Detecta se a tropa ficou 5 segundos travada andando sem sair da posição
+func _update_stuck_detector(delta: float, is_trying: bool) -> void:
+	if not is_trying or is_dead or is_attacking or _is_reversing:
+		_stuck_timer = 0.0
+		_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+		return
+
+	_stuck_interval_timer += delta
+	if _stuck_interval_timer >= 0.5:
+		var dist_moved: float = global_position.distance_to(_stuck_check_pos)
+		# Se em 0.5s tentando andar a tropa moveu menos de 15px (bloqueada por colisão ou obstáculos)
+		if dist_moved < 15.0:
+			_stuck_timer += _stuck_interval_timer
+		else:
+			_stuck_timer = 0.0
+			_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+
+	# Se atingiu 5.0 segundos travado andando sem sair da posição
+	if _stuck_timer >= 5.0:
+		_trigger_anti_stuck()
+
+## Sistema Anti-Bugs: Ativa o recuo para trás
+func _trigger_anti_stuck() -> void:
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = true
+	_reverse_timer = 1.0 # Anda para trás durante 1 segundo
+
+	var backward_dir := -velocity.normalized()
+	if backward_dir == Vector2.ZERO:
+		if is_instance_valid(target_player):
+			backward_dir = (global_position - target_player.global_position).normalized()
+		else:
+			backward_dir = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized()
+
+	var angle_offset: float = randf_range(0.35, 0.75) * (-1.0 if randf() < 0.5 else 1.0)
+	_reverse_direction = backward_dir.rotated(angle_offset).normalized()
+
+## Sistema Anti-Bugs: Recalcula a rota contornando lateralmente o obstáculo
+func _apply_route_recalculation() -> void:
+	var perp := Vector2(-_reverse_direction.y, _reverse_direction.x)
+	if randf() < 0.5:
+		perp = -perp
+	avoidance_direction = perp
+	avoidance_timer = 2.0 # Mantém o desvio de rota por 2 segundos
+
+	_stuck_check_pos = global_position
+	target_player = get_tree().get_first_node_in_group("player") as Node2D
 
 func _check_player_collisions() -> void:
 	for i in get_slide_collision_count():
@@ -292,6 +372,8 @@ func _die() -> void:
 	is_dead = true
 	can_attack = false
 	is_attacking = false
+	_is_reversing = false
+	_stuck_timer = 0.0
 
 	SoundManager.play_enemy_death()
 
@@ -340,8 +422,8 @@ func _drop_loot() -> void:
 	coin.global_position = global_position
 	parent_node.add_child(coin)
 
-	# 10% de chance de dropar também uma Poção de Vida
-	if randf() <= 0.10:
+	# 5% de chance de dropar também uma Poção de Vida
+	if randf() <= 0.05:
 		var potion := ITEM_PICKUP_SCENE.instantiate()
 		if "item_type" in potion:
 			potion.item_type = "potion"

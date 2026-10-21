@@ -46,9 +46,17 @@ func _draw() -> void:
 			var mpos := Vector2(enemy.global_position.x * SCALE_X, enemy.global_position.y * SCALE_Y)
 			if bg_rect.has_point(mpos):
 				var is_giant: bool = ("goblin_type_name" in enemy and enemy.goblin_type_name == "giant")
-				if is_giant:
+				var is_king: bool = ("goblin_type_name" in enemy and enemy.goblin_type_name == "king")
+				var is_mage: bool = ("goblin_type_name" in enemy and enemy.goblin_type_name == "mage")
+				if is_king:
+					draw_circle(mpos, 5.5, Color(1.0, 0.12, 0.12, 1.0))
+					draw_arc(mpos, 7.5, 0, TAU, 14, Color(1.0, 0.85, 0.2, 0.9), 1.5)
+				elif is_giant:
 					draw_circle(mpos, 4.5, Color(1.0, 0.15, 0.15, 1.0))
 					draw_arc(mpos, 6.0, 0, TAU, 12, Color(1.0, 0.6, 0.2, 0.8), 1.0)
+				elif is_mage:
+					draw_circle(mpos, 3.2, Color(1.0, 0.45, 0.15, 1.0))
+					draw_arc(mpos, 4.5, 0, TAU, 8, Color(1.0, 0.2, 0.1, 0.6), 1.0)
 				else:
 					draw_circle(mpos, 2.6, Color(0.95, 0.22, 0.22, 0.95))
 

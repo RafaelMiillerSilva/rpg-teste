@@ -34,6 +34,14 @@ var avoidance_timer: float = 0.0
 var avoidance_direction: Vector2 = Vector2.ZERO
 var time_outside: float = 0.0
 
+## Sistema Anti-Bugs / Anti-Travamento (Detecção de 5s travado andando sem sair da posição)
+var _stuck_timer: float = 0.0
+var _stuck_check_pos: Vector2 = Vector2.ZERO
+var _stuck_interval_timer: float = 0.0
+var _is_reversing: bool = false
+var _reverse_timer: float = 0.0
+var _reverse_direction: Vector2 = Vector2.ZERO
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D if has_node("AnimatedSprite2D") else null
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D if has_node("CollisionShape2D") else null
 @onready var health_bar: ProgressBar = $HealthBar if has_node("HealthBar") else null
@@ -45,6 +53,7 @@ func _ready() -> void:
 	collision_layer = 3
 	collision_mask = 3
 	y_sort_enabled = true
+	_stuck_check_pos = global_position
 	_apply_turn_scaling()
 	_setup_health_bar()
 
@@ -129,14 +138,31 @@ func apply_smart_movement(target_dir: Vector2, delta: float, move_speed: float =
 	if move_speed < 0.0:
 		move_speed = speed
 
+	# Se estiver executando recuo anti-stuck (andando para trás por 1 segundo)
+	if _is_reversing:
+		_reverse_timer -= delta
+		velocity = _reverse_direction * (move_speed * 0.85)
+		move_and_slide()
+		if animated_sprite and not is_attacking:
+			var walk_anim: String = "walk" if (animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("walk")) else "run"
+			if animated_sprite.animation != walk_anim:
+				animated_sprite.play(walk_anim)
+			if abs(_reverse_direction.x) > 0.05:
+				animated_sprite.flip_h = _reverse_direction.x < 0.0
+		if _reverse_timer <= 0.0:
+			_is_reversing = false
+			_apply_route_recalculation()
+		_update_stuck_detector(delta, false)
+		return
+
 	var desired_velocity := target_dir * move_speed
 	velocity = velocity.move_toward(desired_velocity, 650.0 * delta)
 	move_and_slide()
 
 	if animated_sprite and not is_attacking:
-		if velocity.length() > 10.0 and animated_sprite.animation == "run":
+		if velocity.length() > 10.0 and (animated_sprite.animation == "run" or animated_sprite.animation == "walk"):
 			animated_sprite.speed_scale = clampf(move_speed / maxf(1.0, base_speed), 0.5, 3.0)
-		elif animated_sprite.animation != "run":
+		elif animated_sprite.animation != "run" and animated_sprite.animation != "walk":
 			animated_sprite.speed_scale = 1.0
 
 	# Sistema anti-travamento: detecta bloqueio por obstáculos (árvores, construções, outros goblins)
@@ -157,6 +183,63 @@ func apply_smart_movement(target_dir: Vector2, delta: float, move_speed: float =
 					avoidance_direction = perp_a if randf() < 0.5 else perp_b
 
 				avoidance_timer = 0.5
+
+	# Atualiza detector de travamento de 5 segundos
+	var is_trying_to_move: bool = desired_velocity.length() > 20.0 and not is_attacking
+	_update_stuck_detector(delta, is_trying_to_move)
+
+## Sistema Anti-Bugs: Detecta se a tropa ficou 5 segundos travada andando sem sair da posição
+func _update_stuck_detector(delta: float, is_trying: bool) -> void:
+	if not is_trying or is_dead or is_attacking or is_guarding or _is_reversing:
+		_stuck_timer = 0.0
+		_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+		return
+
+	_stuck_interval_timer += delta
+	if _stuck_interval_timer >= 0.5:
+		var dist_moved: float = global_position.distance_to(_stuck_check_pos)
+		# Se em 0.5s tentando andar a tropa moveu menos de 15px (bloqueada por colisão ou obstáculos)
+		if dist_moved < 15.0:
+			_stuck_timer += _stuck_interval_timer
+		else:
+			_stuck_timer = 0.0
+			_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+
+	# Se atingiu 5.0 segundos travado andando sem sair da posição
+	if _stuck_timer >= 5.0:
+		_trigger_anti_stuck()
+
+## Sistema Anti-Bugs: Ativa o recuo para trás
+func _trigger_anti_stuck() -> void:
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = true
+	_reverse_timer = 1.0 # Anda para trás durante 1 segundo
+
+	# Determina direção contrária (andar para trás)
+	var backward_dir := -velocity.normalized()
+	if backward_dir == Vector2.ZERO:
+		if is_instance_valid(current_target):
+			backward_dir = (global_position - current_target.global_position).normalized()
+		else:
+			backward_dir = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized()
+
+	var angle_offset: float = randf_range(0.35, 0.75) * (-1.0 if randf() < 0.5 else 1.0)
+	_reverse_direction = backward_dir.rotated(angle_offset).normalized()
+
+## Sistema Anti-Bugs: Recalcula a rota contornando lateralmente o obstáculo
+func _apply_route_recalculation() -> void:
+	var perp := Vector2(-_reverse_direction.y, _reverse_direction.x)
+	if randf() < 0.5:
+		perp = -perp
+	avoidance_direction = perp
+	avoidance_timer = 2.0 # Mantém o desvio de rota por 2 segundos
+
+	# Limpa posição de checagem e recalcula alvo
+	_stuck_check_pos = global_position
+	current_target = _find_target()
 
 ## Verifica colisões físicas com o jogador ou aliados durante o deslocamento para atacar imediatamente
 func check_player_collisions(attack_callable: Callable) -> void:
@@ -256,6 +339,8 @@ func die() -> void:
 	can_attack = false
 	is_attacking = false
 	is_guarding = false
+	_is_reversing = false
+	_stuck_timer = 0.0
 
 	# Cancela flash de impacto para não interferir no fade de morte
 	if _hit_tween and _hit_tween.is_valid():
@@ -313,8 +398,8 @@ func _drop_loot() -> void:
 		coin.item_type = "coin"
 	parent_node.call_deferred("add_child", coin)
 
-	# 10% de chance de todos os goblins droparem poção
-	if randf() <= 0.10:
+	# 5% de chance de todos os goblins droparem poção de cura
+	if randf() <= 0.05:
 		var potion = ITEM_PICKUP_SCENE.instantiate()
 		potion.global_position = global_position + Vector2(randf_range(-14.0, 14.0), randf_range(-14.0, 14.0))
 		if "item_type" in potion:

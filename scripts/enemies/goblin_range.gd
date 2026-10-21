@@ -19,6 +19,11 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
+	# Sistema Anti-Bugs / Anti-Travamento de 5s: executa recuo se estiver em reversão
+	if _is_reversing:
+		apply_smart_movement(Vector2.ZERO, delta, speed)
+		return
+
 	update_avoidance_timer(delta)
 
 	_shoot_timer -= delta
@@ -41,13 +46,10 @@ func _physics_process(delta: float) -> void:
 	if animated_sprite and abs(dir.x) > 0.05:
 		animated_sprite.flip_h = dir.x < 0.0
 
-	# Manutenção de distância média (kiting)
+	# Manutenção de distância média (kiting) com anti-travamento
 	if dist < PREFERRED_MIN_DIST:
-		# Muito perto dos heróis: recua
-		velocity = velocity.move_toward(-dir * speed, 500.0 * delta)
-		move_and_slide()
-		if animated_sprite and not is_attacking and animated_sprite.animation != "run":
-			animated_sprite.play("run")
+		# Muito perto dos heróis: recua estrategicamente com prevenção de travamento
+		apply_smart_movement(-dir, delta, speed)
 	elif dist > PREFERRED_MAX_DIST:
 		# Muito longe: avança em direção ao alvo contornando obstáculos
 		if not is_attacking:
@@ -58,9 +60,10 @@ func _physics_process(delta: float) -> void:
 				if abs(smart_dir.x) > 0.05:
 					animated_sprite.flip_h = smart_dir.x < 0.0
 	else:
-		# Em distância ideal de disparo: para e atira
+		# Em distância ideal de disparo: desacelera e atira
 		velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
 		move_and_slide()
+		_update_stuck_detector(delta, false)
 		if animated_sprite and not is_attacking and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
 

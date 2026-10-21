@@ -6,6 +6,10 @@ const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 ## Unidade Móvel Aliada: Monge Curandeiro.
 ## Prioriza a cura da unidade mais ferida (menor porcentagem de vida) no raio de 350px a cada 5s.
 
+signal health_updated(current: int, max_val: int)
+signal died(ally_node: Node2D, unit_name: String)
+
+@export var unit_display_name: String = "Monk"
 @export var base_max_health: int = 260
 @export var base_armor: int = 1
 @export var base_speed: float = 190.0
@@ -24,6 +28,17 @@ var _stun_effect_instance: Node2D = null
 var heal_cooldown_timer: float = 0.0
 const HEAL_INTERVAL: float = 5.0
 
+## Sistema Anti-Bugs / Anti-Travamento (Detecção de 5s travado andando sem sair da posição)
+var _stuck_timer: float = 0.0
+var _stuck_check_pos: Vector2 = Vector2.ZERO
+var _stuck_interval_timer: float = 0.0
+var _is_reversing: bool = false
+var _reverse_timer: float = 0.0
+var _reverse_direction: Vector2 = Vector2.ZERO
+var _bypass_direction: Vector2 = Vector2.ZERO
+var _bypass_timer: float = 0.0
+var _is_trying_to_move: bool = false
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: ProgressBar = $HealthBar if has_node("HealthBar") else null
 @onready var armor_label: Label = $ArmorLabel if has_node("ArmorLabel") else null
@@ -35,6 +50,7 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1
 	y_sort_enabled = true
+	_stuck_check_pos = global_position
 
 	_update_stats_from_upgrades()
 	current_health = max_health
@@ -124,6 +140,29 @@ func _physics_process(delta: float) -> void:
 			is_stunned = false
 		return
 
+	# Sistema Anti-Bugs: recuo de desengasgo (andar para trás se travado por 5s)
+	if _is_reversing:
+		_reverse_timer -= delta
+		velocity = velocity.move_toward(_reverse_direction * (base_speed * 0.95), 650.0 * delta)
+		move_and_slide()
+		if animated_sprite:
+			if animated_sprite.animation != "run":
+				animated_sprite.play("run")
+			if abs(_reverse_direction.x) > 0.05:
+				animated_sprite.flip_h = _reverse_direction.x < 0.0
+		if _reverse_timer <= 0.0:
+			_is_reversing = false
+			_apply_route_recalculation()
+		return
+
+	# Atualiza o temporizador de contorno de rota recalculada
+	if _bypass_timer > 0.0:
+		_bypass_timer -= delta
+		if _bypass_timer <= 0.0:
+			_bypass_direction = Vector2.ZERO
+
+	_is_trying_to_move = false
+
 	# Temporizador de cura prioritária (a cada 5 segundos)
 	heal_cooldown_timer -= delta
 	if heal_cooldown_timer <= 0.0 and not is_healing:
@@ -132,6 +171,7 @@ func _physics_process(delta: float) -> void:
 	if is_healing:
 		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
 		move_and_slide()
+		_update_stuck_detector(delta, false)
 		return
 
 	var king := get_tree().get_first_node_in_group("player") as CharacterBody2D
@@ -143,12 +183,15 @@ func _physics_process(delta: float) -> void:
 	# Se a vida estiver abaixo de 25% OU se o Rei se distanciou muito, prioriza voltar/recuar para o círculo do Rei
 	if is_instance_valid(king) and (is_low_health or king_too_far):
 		_move_in_formation(king, delta, true if king_too_far else false)
+		_update_stuck_detector(delta, _is_trying_to_move)
 		return
 
 	# Prioridade de socorro: correr em direção a tropas com menos de 40% de vida que estejam fora do alcance de cura
 	var urgent_target := _find_urgent_ally_outside_range()
 	if is_instance_valid(urgent_target):
 		var dir := (urgent_target.global_position - global_position).normalized()
+		if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+			dir = (dir * 0.45 + _bypass_direction * 0.75).normalized()
 		var run_speed: float = base_speed * 1.35
 		velocity = velocity.move_toward(dir * run_speed, 650.0 * delta)
 		move_and_slide()
@@ -157,6 +200,8 @@ func _physics_process(delta: float) -> void:
 				animated_sprite.play("run")
 			if abs(dir.x) > 0.05:
 				animated_sprite.flip_h = dir.x < 0.0
+		_is_trying_to_move = true
+		_update_stuck_detector(delta, _is_trying_to_move)
 		return
 
 	if is_instance_valid(king):
@@ -166,6 +211,8 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		if animated_sprite and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
+
+	_update_stuck_detector(delta, _is_trying_to_move)
 
 ## Encontra um aliado vivo com menos de 40% de vida que esteja além do raio de cura atual
 func _find_urgent_ally_outside_range() -> Node2D:
@@ -308,6 +355,8 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 
 	if dist_to_pos > 20.0:
 		var dir := (formation_pos - global_position).normalized()
+		if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+			dir = (dir * 0.45 + _bypass_direction * 0.75).normalized()
 		var move_speed: float = base_speed * 1.5 if sprint else base_speed
 		if dist_to_pos > 160.0 and not sprint:
 			move_speed = base_speed * 1.35
@@ -318,11 +367,62 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 				animated_sprite.play("run")
 			if abs(dir.x) > 0.05:
 				animated_sprite.flip_h = dir.x < 0.0
+		_is_trying_to_move = true
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
 		move_and_slide()
 		if animated_sprite and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
+		_is_trying_to_move = false
+
+## Sistema Anti-Bugs: Detecta se a tropa ficou 5 segundos travada andando sem sair da posição
+func _update_stuck_detector(delta: float, is_trying_to_move: bool) -> void:
+	if not is_trying_to_move or is_dead or is_stunned or is_healing or _is_reversing:
+		_stuck_timer = 0.0
+		_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+		return
+
+	_stuck_interval_timer += delta
+	if _stuck_interval_timer >= 0.5:
+		var dist_moved: float = global_position.distance_to(_stuck_check_pos)
+		if dist_moved < 15.0:
+			_stuck_timer += _stuck_interval_timer
+		else:
+			_stuck_timer = 0.0
+			_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+
+	if _stuck_timer >= 5.0:
+		_trigger_anti_stuck()
+
+## Sistema Anti-Bugs: Ativa o recuo para trás
+func _trigger_anti_stuck() -> void:
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = true
+	_reverse_timer = 1.0 # Anda para trás durante 1 segundo
+
+	var backward_dir := -velocity.normalized()
+	if backward_dir == Vector2.ZERO:
+		var king := get_tree().get_first_node_in_group("player") as Node2D
+		if is_instance_valid(king):
+			backward_dir = (global_position - king.global_position).normalized()
+		else:
+			backward_dir = Vector2.DOWN
+
+	var angle_offset: float = randf_range(0.35, 0.75) * (-1.0 if randf() < 0.5 else 1.0)
+	_reverse_direction = backward_dir.rotated(angle_offset).normalized()
+
+## Sistema Anti-Bugs: Recalcula a rota contornando lateralmente o obstáculo
+func _apply_route_recalculation() -> void:
+	var perp := Vector2(-_reverse_direction.y, _reverse_direction.x)
+	if randf() < 0.5:
+		perp = -perp
+	_bypass_direction = perp
+	_bypass_timer = 2.0
+
+	_stuck_check_pos = global_position
 
 func _on_animation_finished() -> void:
 	if animated_sprite and animated_sprite.animation == "heal":
@@ -386,11 +486,13 @@ func _update_health_bar() -> void:
 	if health_bar:
 		health_bar.max_value = max_health
 		health_bar.value = current_health
+	health_updated.emit(current_health, max_health)
 
 func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	died.emit(self, unit_display_name)
 	if is_instance_valid(_stun_effect_instance):
 		_stun_effect_instance.queue_free()
 	remove_from_group("allies")

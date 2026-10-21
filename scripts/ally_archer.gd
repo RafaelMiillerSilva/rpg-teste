@@ -6,6 +6,10 @@ const STUN_EFFECT_SCENE: PackedScene = preload("res://scenes/stun_effect.tscn")
 ## Unidade Móvel Aliada: Arqueiro de Suporte Rápido.
 ## Dispara flechas precisas à distância e forma círculo defensivo com o esquadrão.
 
+signal health_updated(current: int, max_val: int)
+signal died(ally_node: Node2D, unit_name: String)
+
+@export var unit_display_name: String = "Archer"
 @export var base_max_health: int = 220
 @export var base_armor: int = 1
 @export var base_damage: int = 15
@@ -26,6 +30,17 @@ var _stun_timer: float = 0.0
 var _stun_effect_instance: Node2D = null
 var target_enemy: Node2D = null
 
+## Sistema Anti-Bugs / Anti-Travamento (Detecção de 5s travado andando sem sair da posição)
+var _stuck_timer: float = 0.0
+var _stuck_check_pos: Vector2 = Vector2.ZERO
+var _stuck_interval_timer: float = 0.0
+var _is_reversing: bool = false
+var _reverse_timer: float = 0.0
+var _reverse_direction: Vector2 = Vector2.ZERO
+var _bypass_direction: Vector2 = Vector2.ZERO
+var _bypass_timer: float = 0.0
+var _is_trying_to_move: bool = false
+
 const ARROW_SCENE: PackedScene = preload("res://scenes/arrow.tscn")
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -39,6 +54,7 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1
 	y_sort_enabled = true
+	_stuck_check_pos = global_position
 
 	_update_stats_from_upgrades()
 	current_health = max_health
@@ -124,9 +140,33 @@ func _physics_process(delta: float) -> void:
 			is_stunned = false
 		return
 
+	# Sistema Anti-Bugs: recuo de desengasgo (andar para trás se travado por 5s)
+	if _is_reversing:
+		_reverse_timer -= delta
+		velocity = velocity.move_toward(_reverse_direction * (base_speed * 0.95), 650.0 * delta)
+		move_and_slide()
+		if animated_sprite:
+			if animated_sprite.animation != "run":
+				animated_sprite.play("run")
+			if abs(_reverse_direction.x) > 0.05:
+				animated_sprite.flip_h = _reverse_direction.x < 0.0
+		if _reverse_timer <= 0.0:
+			_is_reversing = false
+			_apply_route_recalculation()
+		return
+
+	# Atualiza o temporizador de contorno de rota recalculada
+	if _bypass_timer > 0.0:
+		_bypass_timer -= delta
+		if _bypass_timer <= 0.0:
+			_bypass_direction = Vector2.ZERO
+
+	_is_trying_to_move = false
+
 	if is_shooting:
 		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
 		move_and_slide()
+		_update_stuck_detector(delta, false)
 		return
 
 	var king := get_tree().get_first_node_in_group("player") as CharacterBody2D
@@ -143,6 +183,7 @@ func _physics_process(delta: float) -> void:
 			target_enemy = _find_closest_enemy()
 			if is_instance_valid(target_enemy) and global_position.distance_to(target_enemy.global_position) <= attack_range:
 				_shoot_at_enemy(target_enemy)
+		_update_stuck_detector(delta, _is_trying_to_move)
 		return
 
 	target_enemy = _find_closest_enemy()
@@ -158,6 +199,9 @@ func _physics_process(delta: float) -> void:
 				# Se o Rei estiver se distanciando, recua em direção ao Rei
 				retreat_dir = (retreat_dir * 0.5 + (king.global_position - global_position).normalized() * 0.5).normalized()
 
+			if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+				retreat_dir = (retreat_dir * 0.45 + _bypass_direction * 0.75).normalized()
+
 			velocity = velocity.move_toward(retreat_dir * base_speed, 650.0 * delta)
 			move_and_slide()
 			if animated_sprite:
@@ -166,6 +210,7 @@ func _physics_process(delta: float) -> void:
 				animated_sprite.speed_scale = 1.0
 				if abs(dir.x) > 0.05:
 					animated_sprite.flip_h = dir.x < 0.0
+			_is_trying_to_move = true
 
 			if can_shoot:
 				_shoot_at_enemy(target_enemy)
@@ -183,15 +228,19 @@ func _physics_process(delta: float) -> void:
 					animated_sprite.play("idle")
 					animated_sprite.speed_scale = 1.0
 		else:
-			# Fora de alcance: aproxima-se até o alcance máximo de tiro
-			velocity = velocity.move_toward(dir * base_speed, 600.0 * delta)
+			# Fora de alcance: aproxima-se até o alcance máximo de tiro (com rota recalculada se ativo)
+			var move_dir := dir
+			if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+				move_dir = (dir * 0.45 + _bypass_direction * 0.75).normalized()
+			velocity = velocity.move_toward(move_dir * base_speed, 600.0 * delta)
 			move_and_slide()
 			if animated_sprite:
 				if animated_sprite.animation != "run":
 					animated_sprite.play("run")
 				animated_sprite.speed_scale = 1.0
-				if abs(dir.x) > 0.05:
-					animated_sprite.flip_h = dir.x < 0.0
+				if abs(move_dir.x) > 0.05:
+					animated_sprite.flip_h = move_dir.x < 0.0
+			_is_trying_to_move = true
 	elif is_instance_valid(king):
 		_move_in_formation(king, delta)
 	else:
@@ -200,6 +249,8 @@ func _physics_process(delta: float) -> void:
 		if animated_sprite and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
 			animated_sprite.speed_scale = 1.0
+
+	_update_stuck_detector(delta, _is_trying_to_move)
 
 func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = false) -> void:
 	var allies := get_tree().get_nodes_in_group("allies_range")
@@ -222,6 +273,8 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 
 	if dist_to_pos > 20.0:
 		var dir := (formation_pos - global_position).normalized()
+		if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+			dir = (dir * 0.45 + _bypass_direction * 0.75).normalized()
 		var move_speed: float = base_speed * 1.5 if sprint else base_speed
 		if dist_to_pos > 160.0 and not sprint:
 			move_speed = base_speed * 1.35
@@ -233,12 +286,63 @@ func _move_in_formation(king: CharacterBody2D, delta: float, sprint: bool = fals
 			animated_sprite.speed_scale = 1.0
 			if abs(dir.x) > 0.05:
 				animated_sprite.flip_h = dir.x < 0.0
+		_is_trying_to_move = true
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
 		move_and_slide()
 		if animated_sprite and animated_sprite.animation != "idle":
 			animated_sprite.play("idle")
-			animated_sprite.speed_scale = 1.0
+		_is_trying_to_move = false
+
+## Sistema Anti-Bugs: Detecta se a tropa ficou 5 segundos travada andando sem sair da posição
+func _update_stuck_detector(delta: float, is_trying_to_move: bool) -> void:
+	if not is_trying_to_move or is_dead or is_stunned or is_shooting or _is_reversing:
+		_stuck_timer = 0.0
+		_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+		return
+
+	_stuck_interval_timer += delta
+	if _stuck_interval_timer >= 0.5:
+		var dist_moved: float = global_position.distance_to(_stuck_check_pos)
+		if dist_moved < 15.0:
+			_stuck_timer += _stuck_interval_timer
+		else:
+			_stuck_timer = 0.0
+			_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+
+	if _stuck_timer >= 5.0:
+		_trigger_anti_stuck()
+
+## Sistema Anti-Bugs: Ativa o recuo para trás
+func _trigger_anti_stuck() -> void:
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = true
+	_reverse_timer = 1.0 # Anda para trás durante 1 segundo
+
+	var backward_dir := -velocity.normalized()
+	if backward_dir == Vector2.ZERO:
+		var king := get_tree().get_first_node_in_group("player") as Node2D
+		if is_instance_valid(king):
+			backward_dir = (global_position - king.global_position).normalized()
+		else:
+			backward_dir = Vector2.DOWN
+
+	var angle_offset: float = randf_range(0.35, 0.75) * (-1.0 if randf() < 0.5 else 1.0)
+	_reverse_direction = backward_dir.rotated(angle_offset).normalized()
+
+## Sistema Anti-Bugs: Recalcula a rota contornando lateralmente o obstáculo
+func _apply_route_recalculation() -> void:
+	var perp := Vector2(-_reverse_direction.y, _reverse_direction.x)
+	if randf() < 0.5:
+		perp = -perp
+	_bypass_direction = perp
+	_bypass_timer = 2.0
+
+	target_enemy = null
+	_stuck_check_pos = global_position
 
 func _shoot_at_enemy(enemy_node: Node2D) -> void:
 	if not is_instance_valid(enemy_node):
@@ -363,11 +467,13 @@ func _update_health_bar() -> void:
 	if health_bar:
 		health_bar.max_value = max_health
 		health_bar.value = current_health
+	health_updated.emit(current_health, max_health)
 
 func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	died.emit(self, unit_display_name)
 	if is_instance_valid(_stun_effect_instance):
 		_stun_effect_instance.queue_free()
 	remove_from_group("allies")

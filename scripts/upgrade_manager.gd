@@ -198,6 +198,21 @@ static func buy_upgrade(type: String, player: Node) -> bool:
 			if player.has_signal("armor_changed"):
 				player.armor_changed.emit(player.get_total_armor())
 
+	# Reproduz SFX temático de buff de acordo com a categoria da melhoria
+	match type:
+		"archer_damage", "warrior_damage", "lancer_damage", "damage":
+			SoundManager.play_atk_buff()
+		"king_armor", "armor", "warrior_health", "warrior_block", "max_health":
+			SoundManager.play_def_buff()
+		"archer_speed", "pawn_speed", "attack_speed":
+			SoundManager.play_speed_buff()
+		"monk_heal", "monk_range", "monk_targets":
+			SoundManager.play_heal()
+		"pawn_recruit":
+			SoundManager.play_equip()
+		_:
+			SoundManager.play_equip()
+
 	SoundManager.play_coin()
 	upgrades_changed.emit()
 	return true

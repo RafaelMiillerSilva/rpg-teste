@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cegf82v1q1u4s"
+path="res://.godot/imported/composiia-depois-da-batalha-173739.mp3-d714fb34f7f4f114305c053809eef288.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/lost music/composiia-depois-da-batalha-173739.mp3"
+dest_files=["res://.godot/imported/composiia-depois-da-batalha-173739.mp3-d714fb34f7f4f114305c053809eef288.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

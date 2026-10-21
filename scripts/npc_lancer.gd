@@ -95,6 +95,7 @@ func _on_hiring_dialogue_finished() -> void:
 				player.coins_changed.emit(player.coins)
 
 		SoundManager.play_coin()
+		SoundManager.play_equip()
 		_spawn_ally()
 
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
@@ -103,6 +104,7 @@ func _on_hiring_dialogue_finished() -> void:
 			]
 			dialogue_box.start_dialogue(confirm_lines, npc_name)
 	else:
+		SoundManager.play_denied()
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var fail_lines: Array[String] = [
 				"Você não possui as %d moedas necessárias. Derrote monstros para juntar mais ouro!" % hiring_cost

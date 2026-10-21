@@ -128,8 +128,10 @@ func _ready() -> void:
 	visible = false
 	_ensure_nodes()
 
-	if close_button and not close_button.pressed.is_connected(close_menu):
-		close_button.pressed.connect(close_menu)
+	if close_button:
+		if not close_button.pressed.is_connected(close_menu):
+			close_button.pressed.connect(close_menu)
+		close_button.mouse_entered.connect(SoundManager.play_hover)
 
 func _input(event: InputEvent) -> void:
 	if not is_open:
@@ -169,7 +171,7 @@ func _buy(type: String) -> void:
 	if UpgradeManager.buy_upgrade(type, target_player):
 		update_ui()
 	else:
-		SoundManager.play_hit()
+		SoundManager.play_denied()
 
 func update_ui() -> void:
 	_ensure_nodes()
@@ -272,6 +274,7 @@ func update_ui() -> void:
 		buy_btn.add_theme_stylebox_override("normal", btn_style)
 
 		var captured_id: String = up_id
+		buy_btn.mouse_entered.connect(SoundManager.play_hover)
 		buy_btn.pressed.connect(func(): _buy(captured_id))
 		hbox.add_child(buy_btn)
 

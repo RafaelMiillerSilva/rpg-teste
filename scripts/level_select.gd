@@ -8,8 +8,15 @@ extends Control
 const LevelManager = preload("res://scripts/level_manager.gd")
 const MAIN_MENU_PATH: String = "res://scenes/main_menu.tscn"
 const WORLD_SCENE_PATH: String = "res://scenes/world.tscn"
+const SoundManager = preload("res://scripts/sound_manager.gd")
 
 func _ready() -> void:
+	SoundManager.play_music_playlist("menu")
+
+	for btn in [play_button, back_button]:
+		if btn:
+			btn.mouse_entered.connect(SoundManager.play_hover)
+
 	if play_button:
 		play_button.pressed.connect(_on_play_pressed)
 	if back_button:

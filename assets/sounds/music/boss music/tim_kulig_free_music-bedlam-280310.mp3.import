@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://c3hr1vecf3ajv"
+path="res://.godot/imported/tim_kulig_free_music-bedlam-280310.mp3-12504111a066d690b51b26c848ff8ac4.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/boss music/tim_kulig_free_music-bedlam-280310.mp3"
+dest_files=["res://.godot/imported/tim_kulig_free_music-bedlam-280310.mp3-12504111a066d690b51b26c848ff8ac4.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

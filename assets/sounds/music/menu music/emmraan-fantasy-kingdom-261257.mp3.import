@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://5tv1squdccov"
+path="res://.godot/imported/emmraan-fantasy-kingdom-261257.mp3-c5f275d7e75b8394d6cad7b19cf5dc03.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/menu music/emmraan-fantasy-kingdom-261257.mp3"
+dest_files=["res://.godot/imported/emmraan-fantasy-kingdom-261257.mp3-c5f275d7e75b8394d6cad7b19cf5dc03.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -36,6 +36,7 @@
 [ext_resource type="PackedScene" path="res://scenes/npc_citizen_pawn.tscn" id="36_npc_citizen_pawn"]
 [ext_resource type="PackedScene" path="res://scenes/npc_pawn.tscn" id="37_npc_pawn"]
 [ext_resource type="PackedScene" path="res://scenes/bush.tscn" id="38_bush_scene"]
+[ext_resource type="PackedScene" path="res://scenes/troop_roster_ui.tscn" id="39_troop_roster_ui"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grass"]
 texture = ExtResource("8_tilemap_tex")
@@ -6229,6 +6230,9 @@ offset_top = 125.0
 offset_right = -20.0
 offset_bottom = 245.0
 grow_horizontal = 0
+
+[node name="TroopRosterUI" parent="CanvasLayer" instance=ExtResource("39_troop_roster_ui")]
+
 
 [node name="DialogueBox" parent="." unique_id=11056450 instance=ExtResource("5_dialogue_box")]
 

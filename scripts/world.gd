@@ -69,6 +69,9 @@ func _ready() -> void:
 	wave_manager.boss_spawned.connect(_on_boss_spawned)
 	wave_manager.level_victory_triggered.connect(_on_level_victory)
 
+	# Inicia a playlist de música da gameplay em loop contínuo
+	SoundManager.play_music_playlist("gameplay")
+
 	if pause_button and pause_menu:
 		pause_button.pressed.connect(func():
 			if pause_menu.has_method("toggle_pause"):
@@ -136,6 +139,9 @@ func _on_wave_turn_completed(_turn: int) -> void:
 	_regenerate_all_troops()
 
 func _on_boss_spawned(boss: Node2D) -> void:
+	SoundManager.play_boss_alert()
+	SoundManager.play_music_playlist("boss")
+
 	if boss_bar_container:
 		boss_bar_container.visible = true
 		boss_bar_container.modulate.a = 0.0
@@ -154,10 +160,12 @@ func _on_boss_health_changed(current: int, max_hp: int) -> void:
 	if boss_health_text:
 		boss_health_text.text = "%d / %d" % [maxi(0, current), max_hp]
 
-	if current <= 0 and boss_bar_container:
-		var tween := create_tween()
-		tween.tween_property(boss_bar_container, "modulate:a", 0.0, 0.6)
-		tween.tween_callback(func(): boss_bar_container.visible = false)
+	if current <= 0:
+		SoundManager.play_music_playlist("gameplay")
+		if boss_bar_container:
+			var tween := create_tween()
+			tween.tween_property(boss_bar_container, "modulate:a", 0.0, 0.6)
+			tween.tween_callback(func(): boss_bar_container.visible = false)
 
 func _on_level_victory() -> void:
 	if not is_match_active:

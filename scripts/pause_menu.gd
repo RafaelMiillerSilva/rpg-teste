@@ -6,6 +6,7 @@ extends CanvasLayer
 const SETTINGS_FILE_PATH: String = "user://audio_settings.json"
 const WORLD_SCENE_PATH: String = "res://scenes/world.tscn"
 const MAIN_MENU_SCENE_PATH: String = "res://scenes/main_menu.tscn"
+const SoundManager = preload("res://scripts/sound_manager.gd")
 
 @onready var overlay: ColorRect = $Overlay
 @onready var center_container: CenterContainer = $CenterContainer
@@ -29,6 +30,10 @@ func _ready() -> void:
 	_load_volume_setting()
 	hide_menu()
 	
+	for btn in [resume_button, restart_button, main_menu_button, quit_button]:
+		if btn:
+			btn.mouse_entered.connect(SoundManager.play_hover)
+
 	if resume_button:
 		resume_button.pressed.connect(_on_resume_pressed)
 	if restart_button:
@@ -51,8 +56,18 @@ func _ensure_pause_input_action() -> void:
 		key_event.physical_keycode = KEY_ESCAPE
 		InputMap.action_add_event("pause", key_event)
 
-## Captura a tecla ESC ou a ação de pausa globalmente
+## Captura a tecla ESC ou a ação de pausa globalmente, e atalho F11/Alt+Enter para alternar tela
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F11 or (event.alt_pressed and (event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER)):
+			var current_mode := DisplayServer.window_get_mode()
+			if current_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN or current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+			else:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+			get_viewport().set_input_as_handled()
+			return
+
 	if event.is_action_pressed("pause") or (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_ESCAPE or event.physical_keycode == KEY_ESCAPE)):
 		toggle_pause()
 		get_viewport().set_input_as_handled()
@@ -66,6 +81,7 @@ func toggle_pause() -> void:
 
 ## Pausa a árvore da cena e exibe o modal
 func pause_game() -> void:
+	SoundManager.play_pause()
 	is_paused = true
 	get_tree().paused = true
 	show_menu()
@@ -74,6 +90,7 @@ func pause_game() -> void:
 
 ## Despausa o jogo e esconde o menu
 func resume_game() -> void:
+	SoundManager.play_unpause()
 	is_paused = false
 	get_tree().paused = false
 	hide_menu()
@@ -85,11 +102,11 @@ func hide_menu() -> void:
 	visible = false
 
 func _on_resume_pressed() -> void:
-	SoundManager.play_coin()
+	SoundManager.play_confirm()
 	resume_game()
 
 func _on_restart_pressed() -> void:
-	SoundManager.play_coin()
+	SoundManager.play_confirm()
 	resume_game()
 	var world_script = load("res://scripts/world.gd")
 	if world_script and "auto_load_save_on_start" in world_script:
@@ -97,12 +114,12 @@ func _on_restart_pressed() -> void:
 	get_tree().change_scene_to_file(WORLD_SCENE_PATH)
 
 func _on_main_menu_pressed() -> void:
-	SoundManager.play_hit()
+	SoundManager.play_confirm()
 	resume_game()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
 
 func _on_quit_pressed() -> void:
-	SoundManager.play_hit()
+	SoundManager.play_confirm()
 	resume_game()
 	get_tree().quit()
 

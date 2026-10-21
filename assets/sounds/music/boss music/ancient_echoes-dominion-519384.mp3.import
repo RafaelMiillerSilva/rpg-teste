@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b7cvmq7lgiedv"
+path="res://.godot/imported/ancient_echoes-dominion-519384.mp3-c104af9e614d299f86e31c7e3120a9d2.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/boss music/ancient_echoes-dominion-519384.mp3"
+dest_files=["res://.godot/imported/ancient_echoes-dominion-519384.mp3-c104af9e614d299f86e31c7e3120a9d2.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

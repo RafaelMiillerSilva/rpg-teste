@@ -10,46 +10,46 @@ signal boss_health_changed(current_hp: int, max_hp: int)
 signal boss_defeated(boss: GoblinKing)
 
 const NORMAL_ATTACK_COOLDOWN: float = 2.5
-const NORMAL_ATTACK_DAMAGE: int = 30
-const NORMAL_ATTACK_RANGE: float = 120.0
+const NORMAL_ATTACK_DAMAGE: int = 90
+const NORMAL_ATTACK_RANGE: float = 156.0
 
-const TORNADO_COOLDOWN: float = 10.0
+const TORNADO_COOLDOWN: float = 5.0
 const TORNADO_DURATION: float = 4.5
-const TORNADO_RADIUS: float = 280.0
-const TORNADO_PULL_FORCE: float = 380.0
+const TORNADO_RADIUS: float = 364.0
+const TORNADO_PULL_FORCE: float = 420.0
 const TORNADO_TICK_INTERVAL: float = 0.8
-const TORNADO_TICK_DAMAGE: int = 15
+const TORNADO_TICK_DAMAGE: int = 45
 
 const DUST_SCENE: PackedScene = preload("res://scenes/dust_effect.tscn")
 const WIND_SOUND: AudioStream = preload("res://assets/sounds/8_Atk_Magic_SFX/25_Wind_01.wav")
 
 var is_tornado_active: bool = false
-var _normal_attack_timer: float = 1.5
-var _tornado_cooldown_timer: float = 6.0
+var _normal_attack_timer: float = 1.0
+var _tornado_cooldown_timer: float = 5.0
 var _tornado_duration_timer: float = 0.0
 var _tornado_damage_tick_timer: float = 0.0
 
 @onready var wind_audio_player: AudioStreamPlayer2D = $WindAudioPlayer if has_node("WindAudioPlayer") else null
 
 func _init() -> void:
-	base_max_health = 1800
-	base_damage = 30
+	base_max_health = 5400
+	base_damage = 90
 	base_speed = 95.0
-	base_armor = 5
-	max_health = 1800
-	current_health = 1800
-	damage = 30
+	base_armor = 15
+	max_health = 5400
+	current_health = 5400
+	damage = 90
 	speed = 95.0
-	armor = 5
+	armor = 15
 	goblin_type_name = "king"
 
 func _ready() -> void:
 	super._ready()
-	# Garante os valores oficiais do chefe final
-	max_health = 1800
-	current_health = 1800
-	armor = 5
-	damage = 30
+	# Garante os valores oficiais do chefe final com escala 3x
+	max_health = 5400
+	current_health = 5400
+	armor = 15
+	damage = 90
 	speed = 95.0
 	_update_health_bar()
 	boss_health_changed.emit(current_health, max_health)
@@ -65,14 +65,19 @@ func _ready() -> void:
 
 func _apply_turn_scaling() -> void:
 	# Mantém a vida e armadura do Chefe Final exatamente como solicitado
-	max_health = 1800
-	current_health = 1800
-	armor = 5
-	damage = 30
+	max_health = 5400
+	current_health = 5400
+	armor = 15
+	damage = 90
 	speed = 95.0
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		return
+
+	# Sistema Anti-Bugs / Anti-Travamento de 5s: executa recuo se estiver em reversão
+	if _is_reversing:
+		apply_smart_movement(Vector2.ZERO, delta, speed)
 		return
 
 	update_avoidance_timer(delta)

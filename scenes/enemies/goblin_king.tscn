@@ -179,7 +179,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_king"]
-size = Vector2(96, 110)
+size = Vector2(125, 143)
 
 [node name="GoblinKing" type="CharacterBody2D" groups=["enemies"]]
 y_sort_enabled = true
@@ -190,21 +190,21 @@ script = ExtResource("1_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-scale = Vector2(1.8, 1.8)
+scale = Vector2(2.34, 2.34)
 sprite_frames = SubResource("SpriteFrames_king")
 animation = &"idle"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 20)
+position = Vector2(0, 26)
 shape = SubResource("RectangleShape2D_king")
 
 [node name="HealthBar" type="ProgressBar" parent="."]
 visible = false
-offset_left = -48.0
-offset_top = -90.0
-offset_right = 48.0
-offset_bottom = -82.0
+offset_left = -62.0
+offset_top = -118.0
+offset_right = 62.0
+offset_bottom = -108.0
 show_percentage = false
 
 [node name="WindAudioPlayer" type="AudioStreamPlayer2D" parent="."]

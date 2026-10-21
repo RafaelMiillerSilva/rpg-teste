@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dlluwkubdey5k"
+path="res://.godot/imported/phatphrogstudio-dragons-calling-legacy-of-the-ancients-477468.mp3-2693089154a3c8431984115de3968152.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/background music/phatphrogstudio-dragons-calling-legacy-of-the-ancients-477468.mp3"
+dest_files=["res://.godot/imported/phatphrogstudio-dragons-calling-legacy-of-the-ancients-477468.mp3-2693089154a3c8431984115de3968152.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

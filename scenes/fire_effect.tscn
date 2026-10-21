@@ -1,0 +1,117 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/fire_effect.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/Particle FX/Fire_03.png" id="2_fire_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_0"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_1"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_2"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_3"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_4"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_5"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_6"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_7"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_8"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(512, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_9"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(576, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_10"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(640, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fire_11"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(704, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fire"]
+animations = [{
+"frames": [
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_0")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_1")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_2")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_3")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_4")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_5")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_6")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_7")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_8")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_9")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_10")
+},
+{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fire_11")
+}
+],
+"loop": true,
+"name": &"fire",
+"speed": 12.0
+}]
+
+[node name="FireEffect" type="AnimatedSprite2D"]
+texture_filter = 1
+scale = Vector2(0.9, 0.9)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"fire"
+autoplay = "fire"
+script = ExtResource("1_script")

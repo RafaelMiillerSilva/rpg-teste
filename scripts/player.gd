@@ -59,6 +59,12 @@ var is_invulnerable: bool = false
 var _shake_tween: Tween
 var _current_attack_hit_bodies: Array[Node2D] = []
 
+## Controle de debounce para consumo rigoroso de 1 poção por clique
+var _potion_cooldown: float = 0.0
+
+## Temporizador para passos sonoros na grama
+var _step_timer: float = 0.0
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var sprite = $AnimatedSprite2D # Retrocompatibilidade
 @onready var color_rect = $AnimatedSprite2D # Retrocompatibilidade
@@ -104,6 +110,9 @@ func _ready() -> void:
 	armor_changed.emit(get_total_armor())
 
 func _physics_process(delta: float) -> void:
+	if _potion_cooldown > 0.0:
+		_potion_cooldown -= delta
+
 	# Atalhos de save/load e poção via Input actions
 	if Input.is_action_just_pressed("save_game"):
 		save_game()
@@ -147,14 +156,19 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	# Atualiza a animação de acordo com a movimentação
+	# Atualiza a animação e passos de acordo com a movimentação
 	var is_moving: bool = velocity.length() > 20.0
 	if animated_sprite and not is_attacking:
 		if is_moving:
 			if animated_sprite.animation != "walk":
 				animated_sprite.play("walk")
 				_update_sprite_offset()
+			_step_timer -= delta
+			if _step_timer <= 0.0:
+				_step_timer = 0.35
+				SoundManager.play_step_grass()
 		else:
+			_step_timer = 0.05
 			if animated_sprite.animation != "idle":
 				animated_sprite.play("idle")
 				_update_sprite_offset()
@@ -169,8 +183,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			save_game()
 		elif event.keycode == KEY_F7:
 			load_game()
-		elif event.keycode == KEY_Q:
-			use_potion()
 
 	if not can_move or is_stunned:
 		return
@@ -253,9 +265,12 @@ func trigger_heal_particles() -> void:
 		heal_particles.restart()
 		heal_particles.emitting = true
 
-## Usa uma poção de cura: restaura 35 de vida se tiver poção e não estiver com vida cheia
+## Usa uma poção de cura: restaura 35 de vida se tiver poção e não estiver com vida cheia (estritamente 1 por vez)
 func use_potion() -> void:
+	if _potion_cooldown > 0.0:
+		return
 	if potions > 0 and current_health < max_health:
+		_potion_cooldown = 0.25
 		potions -= 1
 		potions_changed.emit(potions)
 		SoundManager.play_potion()
@@ -427,12 +442,16 @@ func take_damage(amount: int, knockback_dir: Vector2 = Vector2.ZERO, _attacker =
 	if is_invulnerable or current_health <= 0:
 		return
 
-	var final_damage := maxi(1, amount - get_total_armor())
+	var total_armor := get_total_armor()
+	var final_damage := maxi(1, amount - total_armor)
 	current_health = max(0, current_health - final_damage)
 	health_changed.emit(current_health, max_health)
 
-	# Efeitos visuais e sonoros de impacto
-	SoundManager.play_hit()
+	# Efeitos visuais e sonoros de impacto (som de bloqueio se tiver armadura mitigando dano)
+	if total_armor > 0 and final_damage < amount:
+		SoundManager.play_block()
+	else:
+		SoundManager.play_hit()
 	screen_shake(0.2, 7.0)
 
 	# Empurrão para trás

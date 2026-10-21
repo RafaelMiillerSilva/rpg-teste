@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cor865k7u1lq2"
+path="res://.godot/imported/kaazoom-song-of-the-ancients-epic-gothic-fantasy-music-436511.mp3-03923923eb652da658e1593295fc7054.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/menu music/kaazoom-song-of-the-ancients-epic-gothic-fantasy-music-436511.mp3"
+dest_files=["res://.godot/imported/kaazoom-song-of-the-ancients-epic-gothic-fantasy-music-436511.mp3-03923923eb652da658e1593295fc7054.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

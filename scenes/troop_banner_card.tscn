@@ -1,0 +1,55 @@
+[gd_scene load_steps=4 format=3 uid="uid://c7etkm3k8ss3y"]
+
+[ext_resource type="Script" path="res://scripts/troop_banner_card.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://by830tmrbbj70" path="res://assets/tiny_swords/UI Elements/UI Elements/Banners/Banner_Slots.png" id="2_banner_tex"]
+[ext_resource type="Texture2D" uid="uid://do5piwtnkgl8w" path="res://assets/ui/troops/icon_warrior.png" id="3_default_icon"]
+
+[node name="TroopBannerCard" type="Control"]
+custom_minimum_size = Vector2(56, 68)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 56.0
+offset_bottom = 68.0
+pivot_offset = Vector2(28, 34)
+script = ExtResource("1_script")
+
+[node name="BannerBackground" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_banner_tex")
+expand_mode = 1
+
+[node name="SpriteContainer" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 4.0
+offset_top = 5.0
+offset_right = 52.0
+offset_bottom = 51.0
+
+[node name="TroopAnimatedSprite" type="AnimatedSprite2D" parent="SpriteContainer"]
+position = Vector2(24, 23)
+
+[node name="TroopIcon" type="TextureRect" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 50.0
+offset_bottom = 50.0
+texture = ExtResource("3_default_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HealthProgressBar" type="ProgressBar" parent="."]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 53.0
+offset_right = 50.0
+offset_bottom = 59.0
+value = 100.0
+show_percentage = false

@@ -23,6 +23,17 @@ var is_stunned: bool = false
 var _stun_timer: float = 0.0
 var _stun_effect_instance: Node2D = null
 
+## Sistema Anti-Bugs / Anti-Travamento (Detecção de 5s travado andando sem sair da posição)
+var _stuck_timer: float = 0.0
+var _stuck_check_pos: Vector2 = Vector2.ZERO
+var _stuck_interval_timer: float = 0.0
+var _is_reversing: bool = false
+var _reverse_timer: float = 0.0
+var _reverse_direction: Vector2 = Vector2.ZERO
+var _bypass_direction: Vector2 = Vector2.ZERO
+var _bypass_timer: float = 0.0
+var _is_trying_to_move: bool = false
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D if has_node("AnimatedSprite2D") else null
 @onready var capacity_label: Label = $CapacityLabel if has_node("CapacityLabel") else null
 @onready var gold_bar: ProgressBar = $GoldBar if has_node("GoldBar") else null
@@ -33,6 +44,7 @@ func _ready() -> void:
 	collision_layer = 0 # Sem colisão
 	collision_mask = 0  # Não colide nem bloqueia nada
 	y_sort_enabled = true
+	_stuck_check_pos = global_position
 	if has_node("CollisionShape2D"):
 		$CollisionShape2D.disabled = true
 
@@ -92,22 +104,43 @@ func _physics_process(delta: float) -> void:
 	var move_speed: float = base_speed * UpgradeManager.get_pawn_speed_multiplier()
 	var max_cap: int = UpgradeManager.get_pawn_max_capacity()
 
+	# Se estiver executando recuo anti-stuck (andando para trás)
+	if _is_reversing:
+		_reverse_timer -= delta
+		velocity = _reverse_direction * (move_speed * 0.85)
+		move_and_slide()
+		_update_animation("run", _reverse_direction)
+		if _reverse_timer <= 0.0:
+			_is_reversing = false
+			_apply_route_recalculation()
+		_update_stuck_detector(delta, false)
+		return
+
+	if _bypass_timer > 0.0:
+		_bypass_timer -= delta
+
+	_is_trying_to_move = false
+
 	match current_state:
 		State.SEEKING_COINS:
 			# Se a bolsa estiver cheia, corre imediatamente para entregar ao Rei
 			if carried_coins >= max_cap:
 				current_state = State.RETURNING_TO_KING
+				_update_stuck_detector(delta, false)
 				return
 
 			target_coin = _find_closest_coin()
 			if is_instance_valid(target_coin):
 				var dist := global_position.distance_to(target_coin.global_position)
 				var dir := (target_coin.global_position - global_position).normalized()
+				if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+					dir = (dir * 0.4 + _bypass_direction * 0.75).normalized()
 
 				if dist > 22.0:
 					velocity = velocity.move_toward(dir * move_speed, 700.0 * delta)
 					move_and_slide()
 					_update_animation("run", dir)
+					_is_trying_to_move = true
 				else:
 					# Coleta a moeda
 					_collect_coin(target_coin)
@@ -125,15 +158,19 @@ func _physics_process(delta: float) -> void:
 		State.RETURNING_TO_KING:
 			if not is_instance_valid(king):
 				current_state = State.SEEKING_COINS
+				_update_stuck_detector(delta, false)
 				return
 
 			var dist_to_king := global_position.distance_to(king.global_position)
 			var dir_king := (king.global_position - global_position).normalized()
+			if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+				dir_king = (dir_king * 0.4 + _bypass_direction * 0.75).normalized()
 
 			if dist_to_king > 40.0:
 				velocity = velocity.move_toward(dir_king * move_speed, 750.0 * delta)
 				move_and_slide()
 				_update_animation("run", dir_king)
+				_is_trying_to_move = true
 			else:
 				# Chegou ao Rei: entrega o ouro
 				_deliver_gold_to_king(king)
@@ -143,22 +180,79 @@ func _physics_process(delta: float) -> void:
 			# Se surgirem novas moedas, volta a caçar imediatamente
 			if _find_closest_coin() != null:
 				current_state = State.SEEKING_COINS
+				_update_stuck_detector(delta, false)
 				return
 
 			if not is_instance_valid(king):
+				_update_stuck_detector(delta, false)
 				return
 
 			var dist_k := global_position.distance_to(king.global_position)
 			var dir_k := (king.global_position - global_position).normalized()
+			if _bypass_timer > 0.0 and _bypass_direction != Vector2.ZERO:
+				dir_k = (dir_k * 0.4 + _bypass_direction * 0.75).normalized()
 
 			if dist_k > 85.0:
 				velocity = velocity.move_toward(dir_k * move_speed, 600.0 * delta)
 				move_and_slide()
 				_update_animation("run", dir_k)
+				_is_trying_to_move = true
 			else:
 				velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
 				move_and_slide()
 				_update_animation("idle", Vector2.ZERO)
+
+	_update_stuck_detector(delta, _is_trying_to_move)
+
+## Sistema Anti-Bugs: Detecta se a tropa ficou 5 segundos travada andando sem sair da posição
+func _update_stuck_detector(delta: float, is_trying: bool) -> void:
+	if not is_trying or is_stunned or _is_reversing:
+		_stuck_timer = 0.0
+		_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+		return
+
+	_stuck_interval_timer += delta
+	if _stuck_interval_timer >= 0.5:
+		var dist_moved: float = global_position.distance_to(_stuck_check_pos)
+		if dist_moved < 15.0:
+			_stuck_timer += _stuck_interval_timer
+		else:
+			_stuck_timer = 0.0
+			_stuck_check_pos = global_position
+		_stuck_interval_timer = 0.0
+
+	if _stuck_timer >= 5.0:
+		_trigger_anti_stuck()
+
+## Sistema Anti-Bugs: Ativa o recuo para trás
+func _trigger_anti_stuck() -> void:
+	_stuck_timer = 0.0
+	_stuck_interval_timer = 0.0
+	_is_reversing = true
+	_reverse_timer = 1.0 # Anda para trás durante 1 segundo
+
+	var backward_dir := -velocity.normalized()
+	if backward_dir == Vector2.ZERO:
+		var king := get_tree().get_first_node_in_group("player") as Node2D
+		if is_instance_valid(king):
+			backward_dir = (global_position - king.global_position).normalized()
+		else:
+			backward_dir = Vector2.DOWN
+
+	var angle_offset: float = randf_range(0.35, 0.75) * (-1.0 if randf() < 0.5 else 1.0)
+	_reverse_direction = backward_dir.rotated(angle_offset).normalized()
+
+## Sistema Anti-Bugs: Recalcula a rota contornando lateralmente o obstáculo
+func _apply_route_recalculation() -> void:
+	var perp := Vector2(-_reverse_direction.y, _reverse_direction.x)
+	if randf() < 0.5:
+		perp = -perp
+	_bypass_direction = perp
+	_bypass_timer = 2.0
+
+	target_coin = null
+	_stuck_check_pos = global_position
 
 func _update_animation(anim_name: String, dir: Vector2) -> void:
 	if not animated_sprite:

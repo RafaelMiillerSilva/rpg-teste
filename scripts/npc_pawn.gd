@@ -106,6 +106,7 @@ func _on_hiring_dialogue_finished() -> void:
 
 		UpgradeManager.pawn_recruited = true
 		SoundManager.play_coin()
+		SoundManager.play_equip()
 		_spawn_pawn()
 
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
@@ -114,6 +115,7 @@ func _on_hiring_dialogue_finished() -> void:
 			]
 			dialogue_box.start_dialogue(confirm_lines, npc_name)
 	else:
+		SoundManager.play_denied()
 		if dialogue_box and dialogue_box.has_method("start_dialogue"):
 			var fail_lines: Array[String] = [
 				"Majestade, precisais de pelo menos %d moeda de ouro para contratar o Peão Coletor!" % hiring_cost
